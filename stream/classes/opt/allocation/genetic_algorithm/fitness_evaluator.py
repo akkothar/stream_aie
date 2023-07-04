@@ -31,8 +31,8 @@ class StandardFitnessEvaluator(FitnessEvaluator):
     ) -> None:
         super().__init__(workload, accelerator, node_hw_performances)
 
-        self.weights = (-1.0, -1.0)
-        self.metrics = ["energy", "latency"]
+        self.weights = (-1.0,)
+        self.metrics = ["latency"]
 
         self.coarse_node_ids_flexible = coarse_node_ids_flexible
         self.scheduler_candidate_selection = scheduler_candidate_selection
@@ -53,8 +53,8 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         energy = scme.energy
         latency = scme.latency
         if not return_scme:
-            return energy, latency
-        return energy, latency, scme
+            return  latency, 
+        return latency,  scme,
 
     def set_node_core_allocations(self, core_allocations):
         """Sets the core allocation of all nodes in self.workload according to core_allocations.

@@ -54,9 +54,9 @@ def plot_timeline_brokenaxes(
     # Total latency of the SCME
     latency = scme.latency
     # Total energy of the SCME
-    energy = scme.energy
-    # total EDP of the SCME
-    edp = latency * energy
+    # energy = scme.energy
+    # # total EDP of the SCME
+    # edp = latency * energy
     # First get all used and unique communication links
     used_cl_collect = []
     for ky, pair_link in accelerator.pair_links.items():
@@ -326,8 +326,12 @@ def plot_timeline_brokenaxes(
 
     bax.set_xlabel("Clock Cycles", labelpad=20, fontsize=14)
 
-    plt.title(
-        f"Latency = {int(latency):.3e} Cycles   Energy = {energy:.3e} pJ   EDP = {edp:.3e}",
+    # plt.title(
+    #     f"Latency = {int(latency):.3e} Cycles   Energy = {energy:.3e} pJ   EDP = {edp:.3e}",
+    #     loc="right",
+    # )
+    lt.title(
+        f"Latency = {int(latency):.3e} Cycles ",
         loc="right",
     )
     # Get all handles and labels and then filter them for unique ones and set legend

@@ -35,7 +35,7 @@ class GeneticAlgorithm:
         self.prob_crossover = 0.3  # probablility to perform corssover
         self.prob_mutation = 0.7  # probablility to perform mutation
         self.valid_allocations = valid_allocations
-
+        
         self.individual_length = individual_length
 
         self.fitness_evaluator = (
@@ -54,7 +54,7 @@ class GeneticAlgorithm:
 
         self.toolbox = base.Toolbox()  # initialize DEAP toolbox
         self.hof = tools.ParetoFront()  # initialize Hall-of-Fame as Pareto Front
-
+        # self.hof = tools.HallOfFame(1)
         # Create a function that returns a random individual by randomly choosing from the valid allocations of each node
         def get_random_individual():
             return (random.choice(l) for l in valid_allocations)
@@ -161,7 +161,7 @@ class GeneticAlgorithm:
 
     def mutate(self, individual):
         prob_mutation = 1 / len(individual)
-
+        # print("individual:::",individual)
         # change one of the position's core allocation
         if random.random() < 0.75:
             for position in range(len(list(individual))):
