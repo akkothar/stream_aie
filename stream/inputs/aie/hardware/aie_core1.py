@@ -15,7 +15,7 @@ def get_memory_hierarchy(multiplier_array):
    
     rf_i = MemoryInstance(
         name="rf_i",
-        size=512*6000, #12x512b X registers
+        size=512*6, #12x512b X registers
         r_bw=512*6,
         w_bw=512*6,
         r_cost=0,
