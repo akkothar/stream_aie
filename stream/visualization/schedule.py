@@ -330,7 +330,7 @@ def plot_timeline_brokenaxes(
     #     f"Latency = {int(latency):.3e} Cycles   Energy = {energy:.3e} pJ   EDP = {edp:.3e}",
     #     loc="right",
     # )
-    lt.title(
+    plt.title(
         f"Latency = {int(latency):.3e} Cycles ",
         loc="right",
     )

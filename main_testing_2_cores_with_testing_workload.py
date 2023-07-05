@@ -19,7 +19,7 @@ _logging.basicConfig(level=_logging_level, format=_logging_format)
 
 #################################
 CN_define_mode = 1
-hint_loops = [("OY", "all")]
+hint_loops = [("OY", "all"),("OX", "all")]
 
 accelerator = "stream.inputs.testing.hardware.dual_testing_core_offchip"
 workload_path = "stream.inputs.testing.workload.testing_workload_for_2_cores"

@@ -21,9 +21,11 @@ mapping_path = "stream.inputs.aie.testing_mapping_bottleneck"
 
 
 CN_define_mode = 1  # manually define outer CN size for all cores and all layers
-hint_loops = [('OY', 'all')]  # outer CN loops, with error in resnet18 plotting
+
 # hint_loops = [("OY",'all'),("OX",'all')] #create 1 CN layer-by-layer
-# hint_loops = [("OY",1)] #create 1 CN layer-by-layer
+
+hint_loops = [('OY', 'all')]
+# hint_loops = [('OY', 16)]  
 # hint_loops=[]
 # hint_loops = [("OY",1),("OX",32)]
 hw_name = accelerator.split(".")[-1]

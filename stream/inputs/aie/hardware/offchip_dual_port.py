@@ -11,15 +11,15 @@ def get_memory_hierarchy(multiplier_array):
     dram = MemoryInstance(
         name="dram",
         size=10000000000,
-        r_bw=16,
-        w_bw=16,
+        r_bw=32,
+        w_bw=32,
         r_cost=0,
         w_cost=0,
         area=0,
         r_port=2,
         w_port=2,
         rw_port=0,
-        latency=1,
+        latency=10,
     )  # rd E per bit 16
 
     memory_hierarchy_graph = MemoryHierarchy(operational_array=multiplier_array)

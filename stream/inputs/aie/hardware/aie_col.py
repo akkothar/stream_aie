@@ -1,5 +1,8 @@
-from stream.inputs.aie.hardware.aie_core import (
-    get_core as aie_core,
+from stream.inputs.aie.hardware.aie_core1 import (
+    get_core as aie_core1,
+)
+from stream.inputs.aie.hardware.aie_core2 import (
+    get_core as aie_core2,
 )
 # from stream.inputs.aie.hardware.mem_tile import (
 #     get_memTile_core as mem_tile,
@@ -11,7 +14,7 @@ from stream.inputs.aie.hardware.shim_dma_core import (
 from stream.inputs.examples.hardware.nocs.mesh_2d import get_2d_mesh
 from stream.classes.hardware.architecture.accelerator import Accelerator
 
-cores = [aie_core(0),aie_core(1),aie_core(2),aie_core(3)]  # 4 cores
+cores = [aie_core1(0),aie_core2(1),aie_core2(2),aie_core2(3)]  # 4 cores
 
 # mem_tile_core = mem_tile(id=4)
 offchip_core_id = 4
