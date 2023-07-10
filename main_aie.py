@@ -41,8 +41,8 @@ node_hw_cost_pkl_name = f"saved_cn_hw_cost-{experiment_id}"
 plot_file_name = f"-{experiment_id}-"
 plot_full_schedule = True
 plot_data_transfer = True
-nb_ga_individuals = 32  # number of individuals in each genetic algorithm generation
-nb_ga_generations = 32  # number of genetic algorithm generations
+nb_ga_individuals = 16  # number of individuals in each genetic algorithm generation
+nb_ga_generations = 16  # number of genetic algorithm generations
 node_hw_performances_path = f"outputs/{node_hw_cost_pkl_name}.pickle"
 #################################
 
@@ -70,6 +70,7 @@ mainstage = MainStage(
     cn_define_mode=CN_define_mode,
     hint_loops=hint_loops,
     scheduler_candidate_selection="latency",
+    operands_to_prefetch=[],
 )
 
 # Launch the MainStage

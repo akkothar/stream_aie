@@ -162,6 +162,10 @@ class IntraCoreMappingStage(Stage):
 
         logger.info(f"Finished IntraCoreMappingStage.")
         sub_stage = self.list_of_callables[0](self.list_of_callables[1:], **kwargs)
+        # print_mapping(cme)
+        print(dir(cme))
+        for att in dir(cme):
+                    print (att, getattr(cme,att))
         for cme, extra_info in sub_stage.run():
             yield cme, extra_info
 
