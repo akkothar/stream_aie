@@ -74,11 +74,7 @@ class MemoryManager:
 
         self.offchip_core_id = self.accelerator.offchip_core_id
 
-    def contains(self, tensor: Tensor, core_id: int):
-        core = self.accelerator.get_core(core_id)
-        memory_op = tensor.memory_operand
-        top_level_idx = self.get_top_level_idx(core, memory_op)
-        top_instance = self.top_instances[core][top_level_idx]
+    def contains(self, tensor: Tensor, top_instance):
         return any(
             [
                 tensor.equality_hash() == stored_tensor.equality_hash()
@@ -151,9 +147,28 @@ class MemoryManager:
             memory_op = tensor.memory_operand
         top_level_idx = self.get_top_level_idx(core, memory_op)
         top_instance = self.top_instances[core][top_level_idx]
+
+        if self.contains(tensor, top_instance):
+            return (
+                timestep,
+                total_eviction_link_energy_cost,
+                total_eviction_memory_energy_cost,
+            )
+
+        ## Get the tensors that were stored at this timestep.
+        # Because of shared memory there might be tensors that don't exist yet
+        # but are already in the top_instance_stored_tensors because of
+        # the scheduler's non-causal behavior.
         stored_tensors = self.top_instance_stored_tensors[top_instance]
-        if self.contains(tensor, core_id):
-            return
+        stored_tensors = [
+            stored_tensor
+            for stored_tensor in stored_tensors
+            if self.top_instance_stored_since_timestep[top_instance][
+                stored_tensor.equality_hash()
+            ]
+            <= timestep
+        ]
+
         # If there is no equivalent tensor in the core, remove tensors until we have enough space
         # Tensors are removed based on their priority value
         memory_capacity = self.top_instance_capacities[top_instance]
@@ -225,39 +240,44 @@ class MemoryManager:
         core_id: int,
         test_timestep: int,
         worst_case_timestep: int,
+        data_transfer_duration: int,
         memory_op: str,
     ) -> int:
         """
-        This function gives the earliest timestep since test_timestep that the tensor can be added to the core
+        This function gives the earliest timestep since test_timestep that the tensor can be added to the core.
+        A timestep is picked as close as possible to the actual computatino (worst_case_timestep) that doesn't block the computation
 
         Args:
         tensor (Tensor): The tensor to be added to the core.
         core_id (int): The core id that is going to receive the tensor.
         test_timestep (int): The timestep from which to start considering make this tensor data transfer.
+        data_transfer_duration (int): The duration of the transfer.
         memory_op (str): The memory operand storing the tensor on the receiving end of the transfer.
         worst_case_timestep (int): when the data cannot be prefetched (no enough space), the latest timestep that it needs to be transferred.
 
         Returns:
         can_transfer_from_timestep (int): The earliest timestep at which the transfer can actually start.
         """
-
+        ideal_timestep = max(
+            test_timestep, worst_case_timestep - data_transfer_duration
+        )
         core = self.accelerator.get_core(core_id)
         top_level_idx = self.get_top_level_idx(core, memory_op)
         top_instance = self.top_instances[core][top_level_idx]
         top_instance_capacity = self.top_instance_capacities[top_instance]
         all_timesteps = self.top_instance_stored_cumsum[top_instance][:, 0]
         all_usages = self.top_instance_stored_cumsum[top_instance][:, 1]
-        first_possible_idx = np.searchsorted(all_timesteps, test_timestep)
+        first_possible_idx = np.searchsorted(all_timesteps, ideal_timestep)
         last_possible_idx = len(all_timesteps)
-        for possible_idx in range(first_possible_idx, last_possible_idx):
+        for possible_idx in range(first_possible_idx - 1, last_possible_idx):
             relevant_usages = all_usages[possible_idx:]
             updated_relevant_usages = relevant_usages + tensor.size
             if max(updated_relevant_usages) <= top_instance_capacity:
                 can_transfer_from_timestep = max(
-                    all_timesteps[possible_idx], test_timestep
+                    all_timesteps[possible_idx], ideal_timestep
                 )
                 return can_transfer_from_timestep
-        # If we can't add it during any of the previous timesteps, return the worst case
+        # If we can't add it at any timestep, raise error
         return worst_case_timestep
 
     def generate_all_combinations(self, lst):
@@ -267,7 +287,7 @@ class MemoryManager:
 
     def find_best_tensor_combination_to_evict(
         self,
-        core_id,
+        top_instance,
         tensor_to_add,
         stored_tensors,
         capacity,
@@ -292,7 +312,7 @@ class MemoryManager:
         ):
             score = sum(
                 (
-                    stored_tensor.core_priorities[core_id] * stored_tensor.size
+                    stored_tensor.instance_priorities[top_instance] * stored_tensor.size
                     for stored_tensor in combination
                 )
             )
@@ -308,7 +328,7 @@ class MemoryManager:
 
     def find_best_tensor_combination_to_evict_fast(
         self,
-        core_id,
+        top_instance,
         tensor_to_add,
         stored_tensors,
         capacity,
@@ -332,8 +352,8 @@ class MemoryManager:
         ]
         evictable_tensors_priority_size = []
         for tensor in evictable_tensors:
-            core_priority = tensor.get_core_priority(core_id, self)
-            importance = core_priority * tensor.size
+            instance_priority = tensor.get_instance_priority(top_instance, self)
+            importance = instance_priority * tensor.size
             evictable_tensors_priority_size.append(importance)
 
         if not evictable_tensors:
@@ -375,8 +395,11 @@ class MemoryManager:
         # Transfer the tensor to off-chip if it's not present there
         total_link_energy_cost = 0
         total_memory_energy_cost = 0
+        offchip_instance = self.accelerator.get_top_instance_of_core(
+            self.offchip_core_id, tensor.memory_operand
+        )
         should_be_written_to_offchip = write_back_to_offchip and not self.contains(
-            tensor, self.offchip_core_id
+            tensor, offchip_instance
         )
         # current_timestep = max(timestep, self.current_timestep[core][top_level_idx])
         current_timestep = timestep
@@ -413,6 +436,102 @@ class MemoryManager:
         except StopIteration:
             raise ValueError(
                 f"No tensor found equal to {tensor} in core {core} top_level_idx {top_level_idx}."
+            )
+        self.top_instance_stored_tensors[top_instance].remove(equivalent_tensor)
+        del self.top_instance_stored_since_timestep[top_instance][
+            tensor.equality_hash()
+        ]
+
+        self.top_instance_available[top_instance] += tensor_size
+        bisect.insort(
+            self.top_instance_delta_history[top_instance],
+            [current_timestep, -tensor_size],
+        )
+
+        # Use numpy searchsorted to find the where the current_timestep should be inserted
+        all_timesteps = self.top_instance_stored_cumsum[top_instance][:, 0]
+        all_usages = self.top_instance_stored_cumsum[top_instance][:, 1]
+        insert_idx = np.searchsorted(all_timesteps, current_timestep)
+        timestep_already_present = (
+            insert_idx < len(all_timesteps)
+            and all_timesteps[insert_idx] == current_timestep
+        )
+
+        # We first update the remaining usages of later timesteps
+        # If timestep was already in all_timesteps, this timestep will also be updated
+        relevant_usages = all_usages[insert_idx:]
+        updated_relevant_usages = relevant_usages - tensor.size
+        self.top_instance_stored_cumsum[top_instance][
+            insert_idx:, 1
+        ] = updated_relevant_usages
+
+        # If the timestep was not in all_timesteps, it will be inserted here
+        if not timestep_already_present:
+            self.top_instance_stored_cumsum[top_instance] = np.insert(
+                self.top_instance_stored_cumsum[top_instance],
+                insert_idx,
+                [current_timestep, all_usages[insert_idx - 1] - tensor.size],
+                axis=0,
+            )
+
+        return current_timestep, total_link_energy_cost, total_memory_energy_cost
+
+    def remove_tensor_from_top_instance(
+        self,
+        top_instance,
+        tensor: Tensor,
+        timestep: int,
+        write_back_to_offchip: bool = True,
+    ):
+        # Get the core of this top instance.
+        # If there's more than one, pick the first one.
+        core = self.cores_per_top_instance[top_instance][0]
+
+        tensor_size = tensor.size
+
+        # Transfer the tensor to off-chip if it's not present there
+        total_link_energy_cost = 0
+        total_memory_energy_cost = 0
+        offchip_instance = self.accelerator.get_top_instance_of_core(
+            self.offchip_core_id, tensor.memory_operand
+        )
+        should_be_written_to_offchip = write_back_to_offchip and not self.contains(
+            tensor, offchip_instance
+        )
+        # current_timestep = max(timestep, self.current_timestep[core][top_level_idx])
+        current_timestep = timestep
+        if should_be_written_to_offchip:
+            (
+                transfer_start,
+                transfer_end,
+                link_energy_cost,
+                memory_energy_cost,
+            ) = self.accelerator.transfer_data(
+                tensor,
+                core,
+                self.offchip_core_id,
+                tensor.memory_operand,
+                current_timestep,
+            )
+            current_timestep = transfer_end
+            total_link_energy_cost += link_energy_cost
+            total_memory_energy_cost += memory_energy_cost
+            self.add_tensor_to_core(
+                tensor, self.offchip_core_id, transfer_start, transfer_end, []
+            )  # no tensors to avoid evicting on offchip core
+            # self.current_timestep[core][top_level_idx] = current_timestep
+
+        try:
+            equivalent_tensor = next(
+                (
+                    stored_tensor
+                    for stored_tensor in self.top_instance_stored_tensors[top_instance]
+                    if stored_tensor.equality_hash() == tensor.equality_hash()
+                )
+            )
+        except StopIteration:
+            raise ValueError(
+                f"No tensor found equal to {tensor} in top memory instance {top_instance}."
             )
         self.top_instance_stored_tensors[top_instance].remove(equivalent_tensor)
         del self.top_instance_stored_since_timestep[top_instance][
