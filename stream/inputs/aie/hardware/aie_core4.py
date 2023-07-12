@@ -5,7 +5,7 @@ from zigzag.classes.hardware.architecture.operational_unit import Multiplier
 from zigzag.classes.hardware.architecture.operational_array import MultiplierArray
 from zigzag.classes.hardware.architecture.core import Core
 
-from stream.inputs.aie.hardware.mem_tile import mem_tile
+from stream.inputs.aie.hardware.mem_tile import mem_tile2
 
 
 
@@ -115,11 +115,11 @@ def get_memory_hierarchy(multiplier_array):
         served_dimensions='all',
     )
     memory_hierarchy_graph.add_memory(
-        memory_instance=mem_tile,
-        operands=("I1", "I2", "O"),
+        memory_instance=mem_tile2,
+        operands=("O"),
         port_alloc=(
-            {"fh": "w_port_1", "tl": "r_port_1", "fl": None, "th": None},
-            {"fh": "w_port_1", "tl": "r_port_1", "fl": None, "th": None},
+            # {"fh": "w_port_1", "tl": "r_port_1", "fl": None, "th": None},
+            # {"fh": "w_port_1", "tl": "r_port_1", "fl": None, "th": None},
             {"fh": "w_port_1", "tl": "r_port_1", "fl": "w_port_1", "th": "r_port_1"},
         ),
         served_dimensions='all',

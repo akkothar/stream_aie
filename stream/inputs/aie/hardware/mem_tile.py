@@ -7,7 +7,23 @@ from zigzag.classes.hardware.architecture.core import Core
 
 mem_tile = MemoryInstance(
         name="memtile",
-        size=512 * 1024 * 8,
+        size=256 * 1024 * 8,
+        r_bw=128*6,
+        w_bw=128*6,
+        r_cost=0,
+        w_cost=0,
+        area=0,
+        r_port=6,
+        w_port=6,
+        rw_port=0,
+        latency=1,
+        min_r_granularity=128,
+        min_w_granularity=128,
+    )  # rd E per bit 16
+
+mem_tile2 = MemoryInstance(
+        name="memtile2",
+        size=256 * 1024 * 8,
         r_bw=128*6,
         w_bw=128*6,
         r_cost=0,
