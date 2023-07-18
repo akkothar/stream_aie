@@ -77,33 +77,33 @@ def get_memory_hierarchy(multiplier_array):
     th: to high = rd_out_to_high
     tl: to low = rd_out_to_low
     """
-    memory_hierarchy_graph.add_memory(
-        memory_instance=rf_i,
-        operands=("I1",),
-        port_alloc=({"fh": "rw_port_1", "tl": "rw_port_2", "fl": None, "th": None},
-        # {"fh": "w_port_2", "tl": "r_port_2", "fl": None, "th": None},
-        # {"fh": "w_port_1", "tl": "r_port_1", "fl": None, "th": None},
-        ),
-        served_dimensions='all',
-    )
-    memory_hierarchy_graph.add_memory(
-        memory_instance=rf_w,
-        operands=("I2",),
-        port_alloc=({"fh": "rw_port_1", "tl": "rw_port_2", "fl": None, "th": None},
-        # {"fh": "w_port_2", "tl": "r_port_2", "fl": None, "th": None},
-        # {"fh": "w_port_1", "tl": "r_port_1", "fl": None, "th": None},
-        ),
-        served_dimensions='all',
-    )
+    # memory_hierarchy_graph.add_memory(
+    #     memory_instance=rf_i,
+    #     operands=("I1",),
+    #     port_alloc=({"fh": "rw_port_1", "tl": "rw_port_2", "fl": None, "th": None},
+    #     # {"fh": "w_port_2", "tl": "r_port_2", "fl": None, "th": None},
+    #     # {"fh": "w_port_1", "tl": "r_port_1", "fl": None, "th": None},
+    #     ),
+    #     served_dimensions='all',
+    # )
+    # memory_hierarchy_graph.add_memory(
+    #     memory_instance=rf_w,
+    #     operands=("I2",),
+    #     port_alloc=({"fh": "rw_port_1", "tl": "rw_port_2", "fl": None, "th": None},
+    #     # {"fh": "w_port_2", "tl": "r_port_2", "fl": None, "th": None},
+    #     # {"fh": "w_port_1", "tl": "r_port_1", "fl": None, "th": None},
+    #     ),
+    #     served_dimensions='all',
+    # )
    
-    memory_hierarchy_graph.add_memory(
-        memory_instance=rf_o,
-        operands=("O"),
-        port_alloc=(
-            {"fh": "rw_port_1", "tl": "rw_port_2", "fl": "rw_port_1", "th": "rw_port_2"},
-        ),
-        served_dimensions='all',
-    )
+    # memory_hierarchy_graph.add_memory(
+    #     memory_instance=rf_o,
+    #     operands=("O"),
+    #     port_alloc=(
+    #         {"fh": "rw_port_1", "tl": "rw_port_2", "fl": "rw_port_1", "th": "rw_port_2"},
+    #     ),
+    #     served_dimensions='all',
+    # )
     memory_hierarchy_graph.add_memory(
         memory_instance=l1_oiw,
         operands=("O","I1","I2"),

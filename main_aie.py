@@ -41,8 +41,8 @@ node_hw_cost_pkl_name = f"saved_cn_hw_cost-{experiment_id}"
 plot_file_name = f"-{experiment_id}-"
 plot_full_schedule = True
 plot_data_transfer = True
-nb_ga_individuals = 16  # number of individuals in each genetic algorithm generation
-nb_ga_generations = 16  # number of genetic algorithm generations
+nb_ga_individuals = 4  # number of individuals in each genetic algorithm generation
+nb_ga_generations = 4  # number of genetic algorithm generations
 node_hw_performances_path = f"outputs/{node_hw_cost_pkl_name}.pickle"
 #################################
 
@@ -76,9 +76,13 @@ mainstage = MainStage(
 # Launch the MainStage
 
 scme, _ = mainstage.run()
-scme = scme[0]
-print(scme)
 
+for att in dir(scme):
+        print (att, getattr(scme,att))
+scme = scme[0]
+print(scme.workload)
+print(dir(scme.workload))
+print("*********************")
 # Ploting Results
 
 
@@ -90,12 +94,12 @@ percent_shown = (100,)
 timeline_fig_path = f"outputs/{experiment_id}-schedule.png"
 memory_fig_path = f"outputs/{experiment_id}-memory.png"
 
-plot_timeline_brokenaxes(
-    scme,
-    draw_dependencies,
-    section_start_percent,
-    percent_shown,
-    plot_data_transfer,
-    fig_path=timeline_fig_path,
-)
-plot_memory_usage(scme, section_start_percent, percent_shown, fig_path=memory_fig_path)
+# plot_timeline_brokenaxes(
+#     scme,
+#     draw_dependencies,
+#     section_start_percent,
+#     percent_shown,
+#     plot_data_transfer,
+#     fig_path=timeline_fig_path,
+# )
+# plot_memory_usage(scme, section_start_percent, percent_shown, fig_path=memory_fig_path)
