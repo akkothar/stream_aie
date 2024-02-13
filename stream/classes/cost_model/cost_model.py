@@ -19,6 +19,7 @@ class StreamCostModelEvaluation:
         scheduler_candidate_selection: str,
         operands_to_prefetch: list,
         layer_stacks: list,
+        results_path: str,    # Aya
     ) -> None:
         # Initialize the SCME by setting the workload graph to be scheduled
         self.workload = workload
@@ -41,6 +42,8 @@ class StreamCostModelEvaluation:
         self.operands_to_prefetch = operands_to_prefetch
         self.layer_stacks = layer_stacks
 
+        self.results_path = results_path
+
     def __str__(self):
         return f"SCME(energy={self.energy:.2e}, latency={self.latency:.2e})"
 
@@ -49,13 +52,17 @@ class StreamCostModelEvaluation:
         The scheduler takes into account inter-core data movement and also tracks energy and memory through the memory manager.
         This assumes each node in the graph has an energy and runtime of the core to which they are allocated to.
         """
-        results = schedule_graph(
-            self.workload,
-            self.accelerator,
-            self.layer_stacks,
-            candidate_selection=self.scheduler_candidate_selection,
-            operands_to_prefetch=self.operands_to_prefetch,
-        )
+        # Aya
+        tensors_printing_file = self.results_path + "/tensors_details_for_objectFifos.txt"
+        with open(tensors_printing_file, "a") as ff:
+            results = schedule_graph(
+                self.workload,
+                self.accelerator,
+                self.layer_stacks,
+                ff,
+                candidate_selection=self.scheduler_candidate_selection,
+                operands_to_prefetch=self.operands_to_prefetch,
+            )
         self.latency = results[0]
         self.total_cn_onchip_energy = results[1]
         self.total_cn_offchip_link_energy, self.total_cn_offchip_memory_energy = (
@@ -86,6 +93,8 @@ class StreamCostModelEvaluation:
             + self.total_core_to_core_link_energy
             + self.total_core_to_core_memory_energy
         )
+         # Aya: returning the start time of each transfer to help better understand the produced schedule
+        return results[10], results[11], results[12]
 
     def plot_schedule(
         self,

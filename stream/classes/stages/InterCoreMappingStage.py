@@ -11,6 +11,19 @@ from stream.classes.opt.allocation.genetic_algorithm.fitness_evaluator import (
 )
 from stream.utils import get_too_large_operands
 
+# Aya
+from zigzag.visualization.results.print_mapping import (
+    print_mapping as aya_print_mapping, 
+    print_good_tm_format as aya_print_good_tm_format,
+    print_printing_block as aya_print_printing_block,
+)
+# Aya:
+import matplotlib.pyplot as plt
+import networkx as nx
+# Aya:
+import matplotlib.pyplot as plt
+import networkx as nx
+
 logger = logging.getLogger(__name__)
 
 
@@ -63,6 +76,9 @@ class InterCoreMappingStage(Stage):
         self.operands_to_prefetch = operands_to_prefetch
         self.original_workload = kwargs["original_workload"]
 
+        # Aya: added this to customize the path to the output
+        self.results_path = kwargs["results_path"]
+
         # Determine the set of all (layer, group) combinations to be allocated separately
         self.layer_groups = sorted(
             set((n.id[0], n.group) for n in self.workload.nodes())
@@ -111,6 +127,7 @@ class InterCoreMappingStage(Stage):
             self.scheduler_candidate_selection,
             self.operands_to_prefetch,
             self.original_workload,
+            self.results_path,
         )
 
         # Extract the length of an individual.
@@ -132,6 +149,13 @@ class InterCoreMappingStage(Stage):
         """
 
         logger.info(f"Start InterCoreMappingStage.")
+
+        # Aya: paths to files for exporting useful information about the scheduling and the mapping outputs
+        printing_file = self.results_path + "/check_transfer_cycles.txt"
+        prefetch_weights_printing_file = self.results_path + "/check_weights_prefetch_transfer_cycles.txt"
+        actual_links_printing_file = self.results_path + "/check_actual_cores_links.txt"
+        mapping_output_printing_file = self.results_path + "/mapping_output.txt"
+
         if self.individual_length == 0:
             logger.info(f"Evaluating fixed layer-core allocation.")
             core_allocations = []
@@ -144,6 +168,19 @@ class InterCoreMappingStage(Stage):
                                fig_path=f"outputs/schedule_plot{self.fig_path}fixed.png")
             scme.plot_memory_usage(fig_path=f"outputs/memory_usage_plot{self.fig_path}fixed.png")
             """
+
+            # Aya: this function prints to file the cycles at the beginning of tensor transfers between cores to help us understand the final schedule
+            with open(printing_file, "a") as ff:
+                self.fitness_evaluator.print_to_file_cycles_results(ff, self.accelerator.cores.nodes())
+
+            with open(prefetch_weights_printing_file, "a") as ff:
+                self.fitness_evaluator.print_to_file_weights_prefetching_cycles_results(ff)
+
+            with open(actual_links_printing_file, "a") as ff:
+                self.fitness_evaluator.print_to_file_used_links_between_cores(ff)
+
+            
+
             yield scme, None
         else:
             logger.info(
@@ -168,12 +205,64 @@ class InterCoreMappingStage(Stage):
                         core_allocations, return_scme=True
                     )
                     scme = results[-1]
+                    save_last_core_allocation = core_allocations
+
                     """
                     scme.plot_schedule(plot_full_schedule=self.plot_full_schedule,
                                        plot_data_transfer=self.plot_data_transfer,
                                        fig_path=f"outputs/schedule_plot{self.fig_path}{i}.png")
                     scme.plot_memory_usage(fig_path=f"outputs/memory_usage_plot{self.fig_path}{i}.png")
                     """
+                # Aya: these functions print to files the cycles at the beginning of tensor transfers between cores to help us understand the final schedule
+                # I'm printing it after the loop to use the final scme and the final transfer cycles
+                with open(printing_file, "a") as ff:
+                    self.fitness_evaluator.print_to_file_cycles_results(ff, self.accelerator.cores.nodes())
+
+                with open(prefetch_weights_printing_file, "a") as ff:
+                    self.fitness_evaluator.print_to_file_weights_prefetching_cycles_results(ff)
+
+                with open(actual_links_printing_file, "a") as ff:
+                    self.fitness_evaluator.print_to_file_used_links_between_cores(ff)
+
+                ############## Aya: added the following code to extract the final cmes after the genetic algorithm and fitness_evaluator
+                old_layer_id = -1
+                for i, core_allocation in enumerate(save_last_core_allocation):
+                    core = self.accelerator.get_core(core_allocation)
+
+                    (layer_id, group_id) = self.layer_groups_flexible[i]
+                    # the mapping of all CNs of one layer should be identical so print only a single CN of each layer
+                    if(layer_id == old_layer_id):   
+                        continue
+                    old_layer_id = layer_id
+
+                    nodes = (
+                        node
+                        for node in self.workload.nodes()
+                        if isinstance(node, ComputationNode)
+                        and node.id[0] == layer_id
+                        and node.group == group_id
+                    )
+
+                    old_cme = []
+                    for node in nodes:
+                        equivalent_unique_node = next(
+                            (n for n in self.node_hw_performances.keys() if node == n)
+                        )
+                        cme = self.node_hw_performances[equivalent_unique_node][core]
+
+                        if(cme == old_cme):
+                            continue
+                        old_cme = cme
+
+                        with open(mapping_output_printing_file, "a") as ff:
+                            print("############ The mapping results for one layer are ############", file=ff)
+                            print("Number of elements at each memory level is {}".format(cme.mapping.data_elem_per_level), file=ff) # Zigzag's summary of tile sizes
+                            print("Number of bits at each memory level is {}\n".format(cme.mapping.data_bit_per_level), file=ff) # Zigzag's summary of tile sizes
+                            # print("Number of elements unrolled at each memory level is {}".format(cme.mapping.data_elem_per_level_unrolled), file=ff) # Zigzag's summary of tile sizes
+                            # print("Total Number of bits unrolled at each memory level is {}\n".format(cme.mapping.data_bit_per_level_unrolled), file=ff) # Zigzag's summary of tile sizes
+                            print("Spatial mapping field of the CME: {}".format(cme.spatial_mapping), file=ff)
+                            aya_print_mapping(cme, core, ff)  # prints the table detailing the mapping
+                            print("############ End of the mapping results of one layer ############", file=ff)
             yield scme, None
         logger.info(f"Finished InterCoreMappingStage.")
 

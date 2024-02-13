@@ -5,6 +5,11 @@ from networkx import DiGraph
 from stream.classes.hardware.architecture.communication_link import CommunicationLink
 from zigzag.classes.hardware.architecture.core import Core
 
+# From the AIE-MLs perspective, the throughput of each of the loads and store is 256 bits per clock cycle.
+aya_core_to_core_bw = 256  # bandwidth of every link connecting two neighboring cores
+aya_core_to_mem_tile_bw = 32 * 6
+aya_everything_to_dram_bw = 64 * 8
+
 
 def have_shared_memory(a, b):
     """Returns True if core a and core b have a shared top level memory
@@ -80,11 +85,12 @@ def get_2d_mesh(
                         receiver,
                         {
                             "cl": CommunicationLink(
-                                sender, receiver, bandwidth, unit_energy_cost
+                                sender, receiver, aya_core_to_core_bw, unit_energy_cost
                             )
                         },
                     )
                 )
+
         # From right to left
         pairs = zip(reversed(row), reversed(row[:-1]))
         for pair in pairs:
@@ -96,11 +102,13 @@ def get_2d_mesh(
                         receiver,
                         {
                             "cl": CommunicationLink(
-                                sender, receiver, bandwidth, unit_energy_cost
+                                sender, receiver, aya_core_to_core_bw, unit_energy_cost
                             )
                         },
                     )
                 )
+           
+
     # Vertical edges
     for col in cores_array.T:
         # From top to bottom (bottom is highest idx)
@@ -114,11 +122,12 @@ def get_2d_mesh(
                         receiver,
                         {
                             "cl": CommunicationLink(
-                                sender, receiver, bandwidth, unit_energy_cost
+                                sender, receiver, aya_core_to_core_bw, unit_energy_cost
                             )
                         },
                     )
                 )
+            
         # From bottom to top
         pairs = zip(reversed(col), reversed(col[:-1]))
         for pair in pairs:
@@ -130,137 +139,34 @@ def get_2d_mesh(
                         receiver,
                         {
                             "cl": CommunicationLink(
-                                sender, receiver, bandwidth, unit_energy_cost
+                                sender, receiver, aya_core_to_core_bw, unit_energy_cost
                             )
                         },
                     )
                 )
-
-    # If there is a pooling core, also add two edges from each core to the pooling core: one in each direction
-    if pooling_core:
-        if not isinstance(pooling_core, Core):
-            raise ValueError("The given pooling_core is not a Core object.")
-        for core in cores:
-            if not have_shared_memory(core, pooling_core):
-                edges.append(
-                    (
-                        core,
-                        pooling_core,
-                        {
-                            "cl": CommunicationLink(
-                                core, pooling_core, bandwidth, unit_energy_cost
-                            )
-                        },
-                    )
-                )
-                edges.append(
-                    (
-                        pooling_core,
-                        core,
-                        {
-                            "cl": CommunicationLink(
-                                pooling_core, core, bandwidth, unit_energy_cost
-                            )
-                        },
-                    )
-                )
-
-    # If there is a simd core, also add two edges from each core to the pooling core: one in each direction
-    # For now, assume the simd operations come for free, so bandwidth is infinite and unit energy cost is 0
-    simd_bandwidth = float("inf")
-    simd_unit_energy_cost = 0
-    if simd_core:
-        if not isinstance(simd_core, Core):
-            raise ValueError("The given simd_core is not a Core object.")
-        for core in cores:
-            if not have_shared_memory(core, simd_core):
-                edges.append(
-                    (
-                        core,
-                        simd_core,
-                        {
-                            "cl": CommunicationLink(
-                                core, simd_core, simd_bandwidth, simd_unit_energy_cost
-                            )
-                        },
-                    )
-                )
-                edges.append(
-                    (
-                        simd_core,
-                        core,
-                        {
-                            "cl": CommunicationLink(
-                                simd_core, core, simd_bandwidth, simd_unit_energy_cost
-                            )
-                        },
-                    )
-                )
-        # If there is a pooling core, also add two edges from/to the pooling core
-        if pooling_core:
-            if not have_shared_memory(pooling_core, simd_core):
-                edges.append(
-                    (
-                        pooling_core,
-                        simd_core,
-                        {
-                            "cl": CommunicationLink(
-                                pooling_core,
-                                simd_core,
-                                simd_bandwidth,
-                                simd_unit_energy_cost,
-                            )
-                        },
-                    )
-                )
-                edges.append(
-                    (
-                        simd_core,
-                        pooling_core,
-                        {
-                            "cl": CommunicationLink(
-                                simd_core,
-                                pooling_core,
-                                simd_bandwidth,
-                                simd_unit_energy_cost,
-                            )
-                        },
-                    )
-                )
-
+           
     # If there is an offchip core, add a single link for writing to and a single link for reading from the offchip
     if offchip_core:
-        offchip_read_bandwidth = offchip_core.mem_r_bw_dict["O"][0]
-        offchip_write_bandwidth = offchip_core.mem_w_bw_dict["O"][0]
-        # if the offchip core has only one port
-        if len(offchip_core.mem_hierarchy_dict["O"][0].port_list) == 1:
-            to_offchip_link = CommunicationLink(
-                offchip_core,
-                "Any",
-                offchip_write_bandwidth,
-                unit_energy_cost,
-                bidirectional=True,
-            )
-            from_offchip_link = to_offchip_link
-        # if the offchip core has more than one port
-        else:
-            to_offchip_link = CommunicationLink(
-                "Any", offchip_core, offchip_write_bandwidth, unit_energy_cost
-            )
-            from_offchip_link = CommunicationLink(
-                offchip_core, "Any", offchip_read_bandwidth, unit_energy_cost
-            )
+        # offchip_read_bandwidth = offchip_core.mem_r_bw_dict["O"][0]
+        # offchip_write_bandwidth = offchip_core.mem_w_bw_dict["O"][0]
+
+        offchip_bandwidth = aya_everything_to_dram_bw
+        generic_test_link = CommunicationLink(
+            "Any", "Any", offchip_bandwidth, unit_energy_cost
+        )
+
         if not isinstance(offchip_core, Core):
             raise ValueError("The given offchip_core is not a Core object.")
         for core in cores:
-            edges.append((core, offchip_core, {"cl": to_offchip_link}))
-            edges.append((offchip_core, core, {"cl": from_offchip_link}))
-        if pooling_core:
-            edges.append((pooling_core, offchip_core, {"cl": to_offchip_link}))
-            edges.append((offchip_core, pooling_core, {"cl": from_offchip_link}))
-        if simd_core:
-            edges.append((simd_core, offchip_core, {"cl": to_offchip_link}))
-            edges.append((offchip_core, simd_core, {"cl": from_offchip_link}))
+            edges.append((core, offchip_core, {"cl": generic_test_link}))
+            edges.append((offchip_core, core, {"cl": generic_test_link}))
+
+        # for core_1 in cores:
+        #     for core_2 in cores:
+        #         if core_1 == core_2:
+        #             continue
+        #         edges.append((core_1, core_2, {"cl": generic_test_link}))   
+        #         #edges.append((core_2, core_1, {"cl": generic_test_link}))  
 
     # Build the graph using the constructed list of edges
     H = DiGraph(edges)

@@ -47,12 +47,18 @@ def prefetch_constant_operands(
     total_cn_offchip_memory_energy = 0
     total_eviction_to_offchip_link_energy = 0
     total_eviction_to_offchip_memory_energy = 0
+
+    # Aya: added the following two variables
+    ending_transfer_complete_timestep = 0 
+    core_allocations = []
+
     for n in G.nodes():
         for op, tensor in n.operand_tensors.items():
             if op in n.constant_operands and op in operands_to_prefetch:
                 core_allocation = n.core_allocation
                 memory_op = n.memory_operand_links[op]
                 if not accelerator.contains_tensor(tensor, core_allocation):
+                # Aya: if the tensor is not already present in the highest memory level of the core, call the "transfer_tensor_to_core()" function that returns some values including the transfer_link_energy_cost
                     (
                         transfer_complete_timestep,
                         transfer_link_energy_cost,
@@ -70,11 +76,16 @@ def prefetch_constant_operands(
                     total_eviction_to_offchip_memory_energy += (
                         eviction_memory_energy_cost
                     )
+                    # Aya: added the following
+                    ending_transfer_complete_timestep += transfer_complete_timestep
+                    core_allocations.append(core_allocation)
     return (
         total_cn_offchip_link_energy,
         total_cn_offchip_memory_energy,
         total_eviction_to_offchip_link_energy,
         total_eviction_to_offchip_memory_energy,
+        ending_transfer_complete_timestep,  # Aya: added this
+        core_allocations, # Aya: added this
     )
 
 
@@ -259,6 +270,7 @@ def schedule_graph(
     G: DiGraph,
     accelerator: Accelerator,
     layer_stacks: list,
+    file,  # Aya: added this to print the number of tensors and tensor sizes needed by each CN
     cores_idle_from=None,
     candidate_selection="latency",
     operands_to_prefetch=[],
@@ -328,13 +340,19 @@ def schedule_graph(
         prefetch_cn_offchip_memory_energy,
         prefetch_eviction_to_offchip_link_energy,
         prefetch_eviction_to_offchip_memory_energy,
+        full_dbg_transfer_prefetch_weights_end_timings,  # Aya: added this extra parameter to print for debugging
+        cores_prefetched_to # Aya: added this extra parameter to print for debugging
     ) = prefetch_constant_operands(G, accelerator, operands_to_prefetch)
+
     total_cn_offchip_link_energy += prefetch_cn_offchip_link_energy
     total_cn_offchip_memory_energy += prefetch_cn_offchip_memory_energy
     total_eviction_to_offchip_link_energy += prefetch_eviction_to_offchip_link_energy
     total_eviction_to_offchip_memory_energy += (
         prefetch_eviction_to_offchip_memory_energy
     )
+
+    # Aya: added this to store details about the schedule to be exported to file
+    full_dbg_transfer_timings = []
 
     done = False
     while not done:
@@ -352,6 +370,12 @@ def schedule_graph(
         tensors_this_candidate_needs, tensors_operands = get_tensors_needed_for_node(
             best_candidate, G
         )
+
+        # Aya: added this to print the number of tensors and tensor sizes needed by each CN
+        print("\n\tPrinting tensors for {}".format(best_candidate), file=file)
+        for new_tensor in tensors_this_candidate_needs:
+            print("Tensor with size:{} bits, operand:{}, coming from {} with loop dimensions{} and loop ranges{}".format(new_tensor.size, new_tensor.layer_operand, new_tensor.origin, new_tensor.loop_dimensions, new_tensor.loop_ranges), file=file)
+    
         ## Step 1
         # There could be operands that are too large to store in the highest memory on the core
         # The tensors stored in these memories should be evicted and potentially written back to off-chip
@@ -393,6 +417,10 @@ def schedule_graph(
             )
             # Update the possible start time of this node
             timestep = max(timestep, transfer_complete_timestep)
+
+            # Aya
+            full_dbg_transfer_timings.append((came_from_offchip, core_id, timestep, transfer_complete_timestep, tensor_operand, tensor, best_candidate))
+
             # Add the energy costs to their respective trackers
             if came_from_offchip:
                 total_cn_offchip_link_energy += transfer_link_energy_cost
@@ -532,4 +560,7 @@ def schedule_graph(
         total_sink_layer_output_offchip_memory_energy,
         total_core_to_core_link_energy,
         total_core_to_core_memory_energy,
+        full_dbg_transfer_timings,  # Aya: added this
+        full_dbg_transfer_prefetch_weights_end_timings, # Aya: added this
+        cores_prefetched_to, # Aya: added this
     )
