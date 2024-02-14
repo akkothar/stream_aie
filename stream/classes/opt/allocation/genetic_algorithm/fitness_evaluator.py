@@ -1,7 +1,7 @@
 from stream.classes.cost_model.cost_model import StreamCostModelEvaluation
-from stream.classes.opt.scheduling.layer_stacks import get_layer_stacks, LayerStackMode
 from stream.classes.workload.computation_node import ComputationNode
 from zigzag.utils import pickle_deepcopy
+from zigzag.classes.cost_model.cost_model import get_total_inst_bandwidth
 
 from stream.utils import get_too_large_operands
 
@@ -28,10 +28,9 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         accelerator,
         node_hw_performances,
         layer_groups_flexible,
-        scheduler_candidate_selection,
         operands_to_prefetch,
-        original_workload,  # used for layer stack calculation
         results_path, # Aya
+        scheduling_order=None,
     ) -> None:
         super().__init__(workload, accelerator, node_hw_performances)
 
@@ -39,11 +38,12 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         self.metrics = ["energy", "latency"]
 
         self.layer_groups_flexible = layer_groups_flexible
-        self.scheduler_candidate_selection = scheduler_candidate_selection
+        #self.scheduler_candidate_selection = scheduler_candidate_selection
         self.operands_to_prefetch = operands_to_prefetch
-        self.original_workload = original_workload
-        self.constant_operand_occupation_factor = 1
-        self.layer_stacks_mode = LayerStackMode.OCCUPATION_BASED
+        #self.original_workload = original_workload
+        #self.constant_operand_occupation_factor = 1
+        #self.layer_stacks_mode = LayerStackMode.OCCUPATION_BASED
+        self.scheduling_order = scheduling_order
 
         self.results_path = results_path
 
@@ -54,22 +54,20 @@ class StandardFitnessEvaluator(FitnessEvaluator):
             core_allocations (list): core_allocations
         """
         self.set_node_core_allocations(core_allocations)
-        layer_stacks = get_layer_stacks(
-            self.workload,
-            self.original_workload,
-            self.accelerator,
-            self.constant_operand_occupation_factor,
-            self.layer_stacks_mode,
-        )
+        # layer_stacks = get_layer_stacks(
+        #     self.workload,
+        #     self.original_workload,
+        #     self.accelerator,
+        #     self.constant_operand_occupation_factor,
+        #     self.layer_stacks_mode,
+        # )
         scme = StreamCostModelEvaluation(
             pickle_deepcopy(self.workload),
             pickle_deepcopy(self.accelerator),
-            self.scheduler_candidate_selection,
             self.operands_to_prefetch,
-            layer_stacks,
             self.results_path, # Aya
+            self.scheduling_order,
         )
-
 
         # Aya: originally, this function used to not return anything, but now I made it return the 
         self.full_dbg_transfer_timings, self.full_dbg_transfer_prefetch_weights_end_timings, self.cores_prefetched_to = scme.run()
@@ -89,13 +87,19 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         for (from_offchip_flag, receiver_core_id, start_cycle, end_cycle, tensor_operand, tensor, CN) in self.full_dbg_transfer_timings:
             #if receiver_core_id == core.id:
             if end_cycle == -1: 
-                print("\tCore {} already has the tensor of operand {} in its L1 memory for {}.".format(receiver_core_id, tensor.layer_operand, CN), file=printing_file)
+                print("\tCore {} already has the tensor {} with operand {} in its L1 memory for {}.".format(receiver_core_id, tensor, tensor.layer_operand, CN), file=printing_file)
             else:
                 if(from_offchip_flag == False):  
-                    print("Transfer of tensor operand {} to {} on Core {} starts at Cycle {} with origin {} and is NOT coming from the offchip core".format(tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+                    if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
+                        print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It is also consumed by {} and is NOT coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+                    else:
+                        print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It produced by {} and is NOT coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
                 else:
-                    print("Transfer of tensor operand {} to {} on Core {} starts at Cycle {} with origin {} and is coming from the offchip core".format(tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
-
+                    if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
+                        print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It is also consumed by {} and is coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+                    else:
+                        print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It produced by {} and is coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+                
 #new_tensor.size, new_tensor.layer_operand, new_tensor.origin, new_tensor.loop_dimensions, new_tensor.loop_ranges
 
         # print("##### Inside transfer_tensor_to_core function of accelerator.py, printing the transfer_end #####", file=printing_file)
@@ -176,8 +180,13 @@ class StandardFitnessEvaluator(FitnessEvaluator):
                     ]
                     offchip_energy += layer_operand_offchip_energy
                     onchip_energy -= layer_operand_offchip_energy
+                # If there was offchip memory added for too_large_operands, get the offchip bandwidth
+                offchip_core = self.accelerator.get_core(self.accelerator.offchip_core_id)
+                offchip_instance = next(v for k, v in offchip_core.mem_hierarchy_dict.items())[-1].memory_instance
+                offchip_bw = get_total_inst_bandwidth(cme, offchip_instance)
                 node.set_onchip_energy(onchip_energy)
                 node.set_offchip_energy(offchip_energy)
                 node.set_runtime(latency)
                 node.set_core_allocation(core_allocation)
                 node.set_too_large_operands(too_large_operands)
+                node.set_offchip_bandwidth(offchip_bw)

@@ -22,7 +22,7 @@ cores_graph = get_2d_mesh(
     pooling_core=[],
     unit_energy_cost=0,
     offchip_core=offchip_core,
-    #axi_channels_num=1,
+    axi_channels_num=1,
     #mem_tile_core=mem_tile_core,
 )  # , offchip_bandwidth=32)
 

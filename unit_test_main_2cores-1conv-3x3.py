@@ -79,6 +79,7 @@ mainstage = MainStage(
         #UserDefinedModelParserStage,  # Parses the user-defined Model into the workload
         GenerateCNWorkloadHybridStage,
         IntraCoreMappingStage,
+        DetermineSchedulingOrderStage,
         InterCoreMappingStage,
     ],
     accelerator=accelerator,  # required by AcceleratorParserStage

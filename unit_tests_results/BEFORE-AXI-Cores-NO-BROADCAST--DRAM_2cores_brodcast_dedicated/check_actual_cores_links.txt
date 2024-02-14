@@ -1,0 +1,6 @@
+Sender Core: Core(0), Receiver Core: Core(1) has Link: [CommunicationLink(Core(0), Core(1), bw=256)]: 
+Sender Core: Core(0), Receiver Core: Core(6) has Link: [CommunicationLink(Any, Any, bw=512)]: 
+Sender Core: Core(1), Receiver Core: Core(0) has Link: [CommunicationLink(Core(1), Core(0), bw=256)]: 
+Sender Core: Core(1), Receiver Core: Core(6) has Link: [CommunicationLink(Any, Any, bw=512)]: 
+Sender Core: Core(6), Receiver Core: Core(0) has Link: [CommunicationLink(Any, Any, bw=512)]: 
+Sender Core: Core(6), Receiver Core: Core(1) has Link: [CommunicationLink(Any, Any, bw=512)]: 

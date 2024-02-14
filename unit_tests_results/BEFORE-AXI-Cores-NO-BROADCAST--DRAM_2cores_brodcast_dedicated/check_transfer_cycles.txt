@@ -1,0 +1,440 @@
+Transfer of tensor operand W to ComputationNode(0, 0) on Core 0 starts at Cycle 1152 with origin ComputationNode(0, 0) and is coming from the offchip core
+Transfer of tensor operand I to ComputationNode(0, 0) on Core 0 starts at Cycle 2496 with origin ComputationNode(0, 0) and is coming from the offchip core
+Transfer of tensor operand W to ComputationNode(0, 110) on Core 1 starts at Cycle 4992 with origin ComputationNode(0, 110) and is coming from the offchip core
+Transfer of tensor operand I to ComputationNode(0, 110) on Core 1 starts at Cycle 6336 with origin ComputationNode(0, 0) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 1).
+Transfer of tensor operand I to ComputationNode(0, 1) on Core 0 starts at Cycle 50022 with origin ComputationNode(0, 1) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 111).
+Transfer of tensor operand I to ComputationNode(0, 111) on Core 1 starts at Cycle 53862 with origin ComputationNode(0, 1) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 2).
+Transfer of tensor operand I to ComputationNode(0, 2) on Core 0 starts at Cycle 98947 with origin ComputationNode(0, 2) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 112).
+Transfer of tensor operand I to ComputationNode(0, 112) on Core 1 starts at Cycle 102787 with origin ComputationNode(0, 2) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 3).
+Transfer of tensor operand I to ComputationNode(0, 3) on Core 0 starts at Cycle 147872 with origin ComputationNode(0, 3) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 113).
+Transfer of tensor operand I to ComputationNode(0, 113) on Core 1 starts at Cycle 151712 with origin ComputationNode(0, 3) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 4).
+Transfer of tensor operand I to ComputationNode(0, 4) on Core 0 starts at Cycle 196797 with origin ComputationNode(0, 4) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 114).
+Transfer of tensor operand I to ComputationNode(0, 114) on Core 1 starts at Cycle 200637 with origin ComputationNode(0, 4) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 5).
+Transfer of tensor operand I to ComputationNode(0, 5) on Core 0 starts at Cycle 245722 with origin ComputationNode(0, 5) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 115).
+Transfer of tensor operand I to ComputationNode(0, 115) on Core 1 starts at Cycle 249562 with origin ComputationNode(0, 5) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 6).
+Transfer of tensor operand I to ComputationNode(0, 6) on Core 0 starts at Cycle 294647 with origin ComputationNode(0, 6) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 116).
+Transfer of tensor operand I to ComputationNode(0, 116) on Core 1 starts at Cycle 298487 with origin ComputationNode(0, 6) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 7).
+Transfer of tensor operand I to ComputationNode(0, 7) on Core 0 starts at Cycle 343572 with origin ComputationNode(0, 7) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 117).
+Transfer of tensor operand I to ComputationNode(0, 117) on Core 1 starts at Cycle 347412 with origin ComputationNode(0, 7) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 8).
+Transfer of tensor operand I to ComputationNode(0, 8) on Core 0 starts at Cycle 392497 with origin ComputationNode(0, 8) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 118).
+Transfer of tensor operand I to ComputationNode(0, 118) on Core 1 starts at Cycle 396337 with origin ComputationNode(0, 8) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 9).
+Transfer of tensor operand I to ComputationNode(0, 9) on Core 0 starts at Cycle 441422 with origin ComputationNode(0, 9) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 119).
+Transfer of tensor operand I to ComputationNode(0, 119) on Core 1 starts at Cycle 445262 with origin ComputationNode(0, 9) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 10).
+Transfer of tensor operand I to ComputationNode(0, 10) on Core 0 starts at Cycle 490347 with origin ComputationNode(0, 10) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 120).
+Transfer of tensor operand I to ComputationNode(0, 120) on Core 1 starts at Cycle 494187 with origin ComputationNode(0, 10) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 11).
+Transfer of tensor operand I to ComputationNode(0, 11) on Core 0 starts at Cycle 539272 with origin ComputationNode(0, 11) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 121).
+Transfer of tensor operand I to ComputationNode(0, 121) on Core 1 starts at Cycle 543112 with origin ComputationNode(0, 11) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 12).
+Transfer of tensor operand I to ComputationNode(0, 12) on Core 0 starts at Cycle 588197 with origin ComputationNode(0, 12) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 122).
+Transfer of tensor operand I to ComputationNode(0, 122) on Core 1 starts at Cycle 592037 with origin ComputationNode(0, 12) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 13).
+Transfer of tensor operand I to ComputationNode(0, 13) on Core 0 starts at Cycle 637122 with origin ComputationNode(0, 13) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 123).
+Transfer of tensor operand I to ComputationNode(0, 123) on Core 1 starts at Cycle 640962 with origin ComputationNode(0, 13) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 14).
+Transfer of tensor operand I to ComputationNode(0, 14) on Core 0 starts at Cycle 686047 with origin ComputationNode(0, 14) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 124).
+Transfer of tensor operand I to ComputationNode(0, 124) on Core 1 starts at Cycle 689887 with origin ComputationNode(0, 14) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 15).
+Transfer of tensor operand I to ComputationNode(0, 15) on Core 0 starts at Cycle 734972 with origin ComputationNode(0, 15) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 125).
+Transfer of tensor operand I to ComputationNode(0, 125) on Core 1 starts at Cycle 738812 with origin ComputationNode(0, 15) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 16).
+Transfer of tensor operand I to ComputationNode(0, 16) on Core 0 starts at Cycle 783897 with origin ComputationNode(0, 16) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 126).
+Transfer of tensor operand I to ComputationNode(0, 126) on Core 1 starts at Cycle 787737 with origin ComputationNode(0, 16) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 17).
+Transfer of tensor operand I to ComputationNode(0, 17) on Core 0 starts at Cycle 832822 with origin ComputationNode(0, 17) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 127).
+Transfer of tensor operand I to ComputationNode(0, 127) on Core 1 starts at Cycle 836662 with origin ComputationNode(0, 17) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 18).
+Transfer of tensor operand I to ComputationNode(0, 18) on Core 0 starts at Cycle 881747 with origin ComputationNode(0, 18) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 128).
+Transfer of tensor operand I to ComputationNode(0, 128) on Core 1 starts at Cycle 885587 with origin ComputationNode(0, 18) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 19).
+Transfer of tensor operand I to ComputationNode(0, 19) on Core 0 starts at Cycle 930672 with origin ComputationNode(0, 19) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 129).
+Transfer of tensor operand I to ComputationNode(0, 129) on Core 1 starts at Cycle 934512 with origin ComputationNode(0, 19) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 20).
+Transfer of tensor operand I to ComputationNode(0, 20) on Core 0 starts at Cycle 979597 with origin ComputationNode(0, 20) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 130).
+Transfer of tensor operand I to ComputationNode(0, 130) on Core 1 starts at Cycle 983437 with origin ComputationNode(0, 20) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 21).
+Transfer of tensor operand I to ComputationNode(0, 21) on Core 0 starts at Cycle 1028522 with origin ComputationNode(0, 21) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 131).
+Transfer of tensor operand I to ComputationNode(0, 131) on Core 1 starts at Cycle 1032362 with origin ComputationNode(0, 21) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 22).
+Transfer of tensor operand I to ComputationNode(0, 22) on Core 0 starts at Cycle 1077447 with origin ComputationNode(0, 22) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 132).
+Transfer of tensor operand I to ComputationNode(0, 132) on Core 1 starts at Cycle 1081287 with origin ComputationNode(0, 22) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 23).
+Transfer of tensor operand I to ComputationNode(0, 23) on Core 0 starts at Cycle 1126372 with origin ComputationNode(0, 23) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 133).
+Transfer of tensor operand I to ComputationNode(0, 133) on Core 1 starts at Cycle 1130212 with origin ComputationNode(0, 23) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 24).
+Transfer of tensor operand I to ComputationNode(0, 24) on Core 0 starts at Cycle 1175297 with origin ComputationNode(0, 24) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 134).
+Transfer of tensor operand I to ComputationNode(0, 134) on Core 1 starts at Cycle 1179137 with origin ComputationNode(0, 24) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 25).
+Transfer of tensor operand I to ComputationNode(0, 25) on Core 0 starts at Cycle 1224222 with origin ComputationNode(0, 25) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 135).
+Transfer of tensor operand I to ComputationNode(0, 135) on Core 1 starts at Cycle 1228062 with origin ComputationNode(0, 25) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 26).
+Transfer of tensor operand I to ComputationNode(0, 26) on Core 0 starts at Cycle 1273147 with origin ComputationNode(0, 26) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 136).
+Transfer of tensor operand I to ComputationNode(0, 136) on Core 1 starts at Cycle 1276987 with origin ComputationNode(0, 26) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 27).
+Transfer of tensor operand I to ComputationNode(0, 27) on Core 0 starts at Cycle 1322072 with origin ComputationNode(0, 27) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 137).
+Transfer of tensor operand I to ComputationNode(0, 137) on Core 1 starts at Cycle 1325912 with origin ComputationNode(0, 27) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 28).
+Transfer of tensor operand I to ComputationNode(0, 28) on Core 0 starts at Cycle 1370997 with origin ComputationNode(0, 28) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 138).
+Transfer of tensor operand I to ComputationNode(0, 138) on Core 1 starts at Cycle 1374837 with origin ComputationNode(0, 28) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 29).
+Transfer of tensor operand I to ComputationNode(0, 29) on Core 0 starts at Cycle 1419922 with origin ComputationNode(0, 29) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 139).
+Transfer of tensor operand I to ComputationNode(0, 139) on Core 1 starts at Cycle 1423762 with origin ComputationNode(0, 29) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 30).
+Transfer of tensor operand I to ComputationNode(0, 30) on Core 0 starts at Cycle 1468847 with origin ComputationNode(0, 30) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 140).
+Transfer of tensor operand I to ComputationNode(0, 140) on Core 1 starts at Cycle 1472687 with origin ComputationNode(0, 30) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 31).
+Transfer of tensor operand I to ComputationNode(0, 31) on Core 0 starts at Cycle 1517772 with origin ComputationNode(0, 31) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 141).
+Transfer of tensor operand I to ComputationNode(0, 141) on Core 1 starts at Cycle 1521612 with origin ComputationNode(0, 31) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 32).
+Transfer of tensor operand I to ComputationNode(0, 32) on Core 0 starts at Cycle 1566697 with origin ComputationNode(0, 32) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 142).
+Transfer of tensor operand I to ComputationNode(0, 142) on Core 1 starts at Cycle 1570537 with origin ComputationNode(0, 32) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 33).
+Transfer of tensor operand I to ComputationNode(0, 33) on Core 0 starts at Cycle 1615622 with origin ComputationNode(0, 33) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 143).
+Transfer of tensor operand I to ComputationNode(0, 143) on Core 1 starts at Cycle 1619462 with origin ComputationNode(0, 33) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 34).
+Transfer of tensor operand I to ComputationNode(0, 34) on Core 0 starts at Cycle 1664547 with origin ComputationNode(0, 34) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 144).
+Transfer of tensor operand I to ComputationNode(0, 144) on Core 1 starts at Cycle 1668387 with origin ComputationNode(0, 34) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 35).
+Transfer of tensor operand I to ComputationNode(0, 35) on Core 0 starts at Cycle 1713472 with origin ComputationNode(0, 35) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 145).
+Transfer of tensor operand I to ComputationNode(0, 145) on Core 1 starts at Cycle 1717312 with origin ComputationNode(0, 35) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 36).
+Transfer of tensor operand I to ComputationNode(0, 36) on Core 0 starts at Cycle 1762397 with origin ComputationNode(0, 36) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 146).
+Transfer of tensor operand I to ComputationNode(0, 146) on Core 1 starts at Cycle 1766237 with origin ComputationNode(0, 36) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 37).
+Transfer of tensor operand I to ComputationNode(0, 37) on Core 0 starts at Cycle 1811322 with origin ComputationNode(0, 37) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 147).
+Transfer of tensor operand I to ComputationNode(0, 147) on Core 1 starts at Cycle 1815162 with origin ComputationNode(0, 37) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 38).
+Transfer of tensor operand I to ComputationNode(0, 38) on Core 0 starts at Cycle 1860247 with origin ComputationNode(0, 38) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 148).
+Transfer of tensor operand I to ComputationNode(0, 148) on Core 1 starts at Cycle 1864087 with origin ComputationNode(0, 38) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 39).
+Transfer of tensor operand I to ComputationNode(0, 39) on Core 0 starts at Cycle 1909172 with origin ComputationNode(0, 39) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 149).
+Transfer of tensor operand I to ComputationNode(0, 149) on Core 1 starts at Cycle 1913012 with origin ComputationNode(0, 39) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 40).
+Transfer of tensor operand I to ComputationNode(0, 40) on Core 0 starts at Cycle 1958097 with origin ComputationNode(0, 40) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 150).
+Transfer of tensor operand I to ComputationNode(0, 150) on Core 1 starts at Cycle 1961937 with origin ComputationNode(0, 40) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 41).
+Transfer of tensor operand I to ComputationNode(0, 41) on Core 0 starts at Cycle 2007022 with origin ComputationNode(0, 41) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 151).
+Transfer of tensor operand I to ComputationNode(0, 151) on Core 1 starts at Cycle 2010862 with origin ComputationNode(0, 41) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 42).
+Transfer of tensor operand I to ComputationNode(0, 42) on Core 0 starts at Cycle 2055947 with origin ComputationNode(0, 42) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 152).
+Transfer of tensor operand I to ComputationNode(0, 152) on Core 1 starts at Cycle 2059787 with origin ComputationNode(0, 42) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 43).
+Transfer of tensor operand I to ComputationNode(0, 43) on Core 0 starts at Cycle 2104872 with origin ComputationNode(0, 43) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 153).
+Transfer of tensor operand I to ComputationNode(0, 153) on Core 1 starts at Cycle 2108712 with origin ComputationNode(0, 43) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 44).
+Transfer of tensor operand I to ComputationNode(0, 44) on Core 0 starts at Cycle 2153797 with origin ComputationNode(0, 44) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 154).
+Transfer of tensor operand I to ComputationNode(0, 154) on Core 1 starts at Cycle 2157637 with origin ComputationNode(0, 44) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 45).
+Transfer of tensor operand I to ComputationNode(0, 45) on Core 0 starts at Cycle 2202722 with origin ComputationNode(0, 45) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 155).
+Transfer of tensor operand I to ComputationNode(0, 155) on Core 1 starts at Cycle 2206562 with origin ComputationNode(0, 45) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 46).
+Transfer of tensor operand I to ComputationNode(0, 46) on Core 0 starts at Cycle 2251647 with origin ComputationNode(0, 46) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 156).
+Transfer of tensor operand I to ComputationNode(0, 156) on Core 1 starts at Cycle 2255487 with origin ComputationNode(0, 46) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 47).
+Transfer of tensor operand I to ComputationNode(0, 47) on Core 0 starts at Cycle 2300572 with origin ComputationNode(0, 47) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 157).
+Transfer of tensor operand I to ComputationNode(0, 157) on Core 1 starts at Cycle 2304412 with origin ComputationNode(0, 47) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 48).
+Transfer of tensor operand I to ComputationNode(0, 48) on Core 0 starts at Cycle 2349497 with origin ComputationNode(0, 48) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 158).
+Transfer of tensor operand I to ComputationNode(0, 158) on Core 1 starts at Cycle 2353337 with origin ComputationNode(0, 48) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 49).
+Transfer of tensor operand I to ComputationNode(0, 49) on Core 0 starts at Cycle 2398422 with origin ComputationNode(0, 49) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 159).
+Transfer of tensor operand I to ComputationNode(0, 159) on Core 1 starts at Cycle 2402262 with origin ComputationNode(0, 49) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 50).
+Transfer of tensor operand I to ComputationNode(0, 50) on Core 0 starts at Cycle 2447347 with origin ComputationNode(0, 50) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 160).
+Transfer of tensor operand I to ComputationNode(0, 160) on Core 1 starts at Cycle 2451187 with origin ComputationNode(0, 50) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 51).
+Transfer of tensor operand I to ComputationNode(0, 51) on Core 0 starts at Cycle 2496272 with origin ComputationNode(0, 51) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 161).
+Transfer of tensor operand I to ComputationNode(0, 161) on Core 1 starts at Cycle 2500112 with origin ComputationNode(0, 51) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 52).
+Transfer of tensor operand I to ComputationNode(0, 52) on Core 0 starts at Cycle 2545197 with origin ComputationNode(0, 52) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 162).
+Transfer of tensor operand I to ComputationNode(0, 162) on Core 1 starts at Cycle 2549037 with origin ComputationNode(0, 52) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 53).
+Transfer of tensor operand I to ComputationNode(0, 53) on Core 0 starts at Cycle 2594122 with origin ComputationNode(0, 53) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 163).
+Transfer of tensor operand I to ComputationNode(0, 163) on Core 1 starts at Cycle 2597962 with origin ComputationNode(0, 53) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 54).
+Transfer of tensor operand I to ComputationNode(0, 54) on Core 0 starts at Cycle 2643047 with origin ComputationNode(0, 54) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 164).
+Transfer of tensor operand I to ComputationNode(0, 164) on Core 1 starts at Cycle 2646887 with origin ComputationNode(0, 54) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 55).
+Transfer of tensor operand I to ComputationNode(0, 55) on Core 0 starts at Cycle 2691972 with origin ComputationNode(0, 55) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 165).
+Transfer of tensor operand I to ComputationNode(0, 165) on Core 1 starts at Cycle 2695812 with origin ComputationNode(0, 55) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 56).
+Transfer of tensor operand I to ComputationNode(0, 56) on Core 0 starts at Cycle 2740897 with origin ComputationNode(0, 56) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 166).
+Transfer of tensor operand I to ComputationNode(0, 166) on Core 1 starts at Cycle 2744737 with origin ComputationNode(0, 56) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 57).
+Transfer of tensor operand I to ComputationNode(0, 57) on Core 0 starts at Cycle 2789822 with origin ComputationNode(0, 57) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 167).
+Transfer of tensor operand I to ComputationNode(0, 167) on Core 1 starts at Cycle 2793662 with origin ComputationNode(0, 57) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 58).
+Transfer of tensor operand I to ComputationNode(0, 58) on Core 0 starts at Cycle 2838747 with origin ComputationNode(0, 58) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 168).
+Transfer of tensor operand I to ComputationNode(0, 168) on Core 1 starts at Cycle 2842587 with origin ComputationNode(0, 58) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 59).
+Transfer of tensor operand I to ComputationNode(0, 59) on Core 0 starts at Cycle 2887672 with origin ComputationNode(0, 59) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 169).
+Transfer of tensor operand I to ComputationNode(0, 169) on Core 1 starts at Cycle 2891512 with origin ComputationNode(0, 59) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 60).
+Transfer of tensor operand I to ComputationNode(0, 60) on Core 0 starts at Cycle 2936597 with origin ComputationNode(0, 60) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 170).
+Transfer of tensor operand I to ComputationNode(0, 170) on Core 1 starts at Cycle 2940437 with origin ComputationNode(0, 60) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 61).
+Transfer of tensor operand I to ComputationNode(0, 61) on Core 0 starts at Cycle 2985522 with origin ComputationNode(0, 61) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 171).
+Transfer of tensor operand I to ComputationNode(0, 171) on Core 1 starts at Cycle 2989362 with origin ComputationNode(0, 61) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 62).
+Transfer of tensor operand I to ComputationNode(0, 62) on Core 0 starts at Cycle 3034447 with origin ComputationNode(0, 62) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 172).
+Transfer of tensor operand I to ComputationNode(0, 172) on Core 1 starts at Cycle 3038287 with origin ComputationNode(0, 62) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 63).
+Transfer of tensor operand I to ComputationNode(0, 63) on Core 0 starts at Cycle 3083372 with origin ComputationNode(0, 63) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 173).
+Transfer of tensor operand I to ComputationNode(0, 173) on Core 1 starts at Cycle 3087212 with origin ComputationNode(0, 63) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 64).
+Transfer of tensor operand I to ComputationNode(0, 64) on Core 0 starts at Cycle 3132297 with origin ComputationNode(0, 64) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 174).
+Transfer of tensor operand I to ComputationNode(0, 174) on Core 1 starts at Cycle 3136137 with origin ComputationNode(0, 64) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 65).
+Transfer of tensor operand I to ComputationNode(0, 65) on Core 0 starts at Cycle 3181222 with origin ComputationNode(0, 65) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 175).
+Transfer of tensor operand I to ComputationNode(0, 175) on Core 1 starts at Cycle 3185062 with origin ComputationNode(0, 65) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 66).
+Transfer of tensor operand I to ComputationNode(0, 66) on Core 0 starts at Cycle 3230147 with origin ComputationNode(0, 66) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 176).
+Transfer of tensor operand I to ComputationNode(0, 176) on Core 1 starts at Cycle 3233987 with origin ComputationNode(0, 66) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 67).
+Transfer of tensor operand I to ComputationNode(0, 67) on Core 0 starts at Cycle 3279072 with origin ComputationNode(0, 67) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 177).
+Transfer of tensor operand I to ComputationNode(0, 177) on Core 1 starts at Cycle 3282912 with origin ComputationNode(0, 67) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 68).
+Transfer of tensor operand I to ComputationNode(0, 68) on Core 0 starts at Cycle 3327997 with origin ComputationNode(0, 68) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 178).
+Transfer of tensor operand I to ComputationNode(0, 178) on Core 1 starts at Cycle 3331837 with origin ComputationNode(0, 68) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 69).
+Transfer of tensor operand I to ComputationNode(0, 69) on Core 0 starts at Cycle 3376922 with origin ComputationNode(0, 69) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 179).
+Transfer of tensor operand I to ComputationNode(0, 179) on Core 1 starts at Cycle 3380762 with origin ComputationNode(0, 69) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 70).
+Transfer of tensor operand I to ComputationNode(0, 70) on Core 0 starts at Cycle 3425847 with origin ComputationNode(0, 70) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 180).
+Transfer of tensor operand I to ComputationNode(0, 180) on Core 1 starts at Cycle 3429687 with origin ComputationNode(0, 70) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 71).
+Transfer of tensor operand I to ComputationNode(0, 71) on Core 0 starts at Cycle 3474772 with origin ComputationNode(0, 71) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 181).
+Transfer of tensor operand I to ComputationNode(0, 181) on Core 1 starts at Cycle 3478612 with origin ComputationNode(0, 71) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 72).
+Transfer of tensor operand I to ComputationNode(0, 72) on Core 0 starts at Cycle 3523697 with origin ComputationNode(0, 72) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 182).
+Transfer of tensor operand I to ComputationNode(0, 182) on Core 1 starts at Cycle 3527537 with origin ComputationNode(0, 72) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 73).
+Transfer of tensor operand I to ComputationNode(0, 73) on Core 0 starts at Cycle 3572622 with origin ComputationNode(0, 73) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 183).
+Transfer of tensor operand I to ComputationNode(0, 183) on Core 1 starts at Cycle 3576462 with origin ComputationNode(0, 73) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 74).
+Transfer of tensor operand I to ComputationNode(0, 74) on Core 0 starts at Cycle 3621547 with origin ComputationNode(0, 74) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 184).
+Transfer of tensor operand I to ComputationNode(0, 184) on Core 1 starts at Cycle 3625387 with origin ComputationNode(0, 74) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 75).
+Transfer of tensor operand I to ComputationNode(0, 75) on Core 0 starts at Cycle 3670472 with origin ComputationNode(0, 75) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 185).
+Transfer of tensor operand I to ComputationNode(0, 185) on Core 1 starts at Cycle 3674312 with origin ComputationNode(0, 75) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 76).
+Transfer of tensor operand I to ComputationNode(0, 76) on Core 0 starts at Cycle 3719397 with origin ComputationNode(0, 76) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 186).
+Transfer of tensor operand I to ComputationNode(0, 186) on Core 1 starts at Cycle 3723237 with origin ComputationNode(0, 76) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 77).
+Transfer of tensor operand I to ComputationNode(0, 77) on Core 0 starts at Cycle 3768322 with origin ComputationNode(0, 77) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 187).
+Transfer of tensor operand I to ComputationNode(0, 187) on Core 1 starts at Cycle 3772162 with origin ComputationNode(0, 77) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 78).
+Transfer of tensor operand I to ComputationNode(0, 78) on Core 0 starts at Cycle 3817247 with origin ComputationNode(0, 78) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 188).
+Transfer of tensor operand I to ComputationNode(0, 188) on Core 1 starts at Cycle 3821087 with origin ComputationNode(0, 78) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 79).
+Transfer of tensor operand I to ComputationNode(0, 79) on Core 0 starts at Cycle 3866172 with origin ComputationNode(0, 79) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 189).
+Transfer of tensor operand I to ComputationNode(0, 189) on Core 1 starts at Cycle 3870012 with origin ComputationNode(0, 79) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 80).
+Transfer of tensor operand I to ComputationNode(0, 80) on Core 0 starts at Cycle 3915097 with origin ComputationNode(0, 80) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 190).
+Transfer of tensor operand I to ComputationNode(0, 190) on Core 1 starts at Cycle 3918937 with origin ComputationNode(0, 80) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 81).
+Transfer of tensor operand I to ComputationNode(0, 81) on Core 0 starts at Cycle 3964022 with origin ComputationNode(0, 81) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 191).
+Transfer of tensor operand I to ComputationNode(0, 191) on Core 1 starts at Cycle 3967862 with origin ComputationNode(0, 81) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 82).
+Transfer of tensor operand I to ComputationNode(0, 82) on Core 0 starts at Cycle 4012947 with origin ComputationNode(0, 82) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 192).
+Transfer of tensor operand I to ComputationNode(0, 192) on Core 1 starts at Cycle 4016787 with origin ComputationNode(0, 82) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 83).
+Transfer of tensor operand I to ComputationNode(0, 83) on Core 0 starts at Cycle 4061872 with origin ComputationNode(0, 83) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 193).
+Transfer of tensor operand I to ComputationNode(0, 193) on Core 1 starts at Cycle 4065712 with origin ComputationNode(0, 83) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 84).
+Transfer of tensor operand I to ComputationNode(0, 84) on Core 0 starts at Cycle 4110797 with origin ComputationNode(0, 84) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 194).
+Transfer of tensor operand I to ComputationNode(0, 194) on Core 1 starts at Cycle 4114637 with origin ComputationNode(0, 84) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 85).
+Transfer of tensor operand I to ComputationNode(0, 85) on Core 0 starts at Cycle 4159722 with origin ComputationNode(0, 85) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 195).
+Transfer of tensor operand I to ComputationNode(0, 195) on Core 1 starts at Cycle 4163562 with origin ComputationNode(0, 85) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 86).
+Transfer of tensor operand I to ComputationNode(0, 86) on Core 0 starts at Cycle 4208647 with origin ComputationNode(0, 86) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 196).
+Transfer of tensor operand I to ComputationNode(0, 196) on Core 1 starts at Cycle 4212487 with origin ComputationNode(0, 86) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 87).
+Transfer of tensor operand I to ComputationNode(0, 87) on Core 0 starts at Cycle 4257572 with origin ComputationNode(0, 87) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 197).
+Transfer of tensor operand I to ComputationNode(0, 197) on Core 1 starts at Cycle 4261412 with origin ComputationNode(0, 87) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 88).
+Transfer of tensor operand I to ComputationNode(0, 88) on Core 0 starts at Cycle 4306497 with origin ComputationNode(0, 88) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 198).
+Transfer of tensor operand I to ComputationNode(0, 198) on Core 1 starts at Cycle 4310337 with origin ComputationNode(0, 88) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 89).
+Transfer of tensor operand I to ComputationNode(0, 89) on Core 0 starts at Cycle 4355422 with origin ComputationNode(0, 89) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 199).
+Transfer of tensor operand I to ComputationNode(0, 199) on Core 1 starts at Cycle 4359262 with origin ComputationNode(0, 89) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 90).
+Transfer of tensor operand I to ComputationNode(0, 90) on Core 0 starts at Cycle 4404347 with origin ComputationNode(0, 90) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 200).
+Transfer of tensor operand I to ComputationNode(0, 200) on Core 1 starts at Cycle 4408187 with origin ComputationNode(0, 90) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 91).
+Transfer of tensor operand I to ComputationNode(0, 91) on Core 0 starts at Cycle 4453272 with origin ComputationNode(0, 91) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 201).
+Transfer of tensor operand I to ComputationNode(0, 201) on Core 1 starts at Cycle 4457112 with origin ComputationNode(0, 91) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 92).
+Transfer of tensor operand I to ComputationNode(0, 92) on Core 0 starts at Cycle 4502197 with origin ComputationNode(0, 92) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 202).
+Transfer of tensor operand I to ComputationNode(0, 202) on Core 1 starts at Cycle 4506037 with origin ComputationNode(0, 92) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 93).
+Transfer of tensor operand I to ComputationNode(0, 93) on Core 0 starts at Cycle 4551122 with origin ComputationNode(0, 93) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 203).
+Transfer of tensor operand I to ComputationNode(0, 203) on Core 1 starts at Cycle 4554962 with origin ComputationNode(0, 93) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 94).
+Transfer of tensor operand I to ComputationNode(0, 94) on Core 0 starts at Cycle 4600047 with origin ComputationNode(0, 94) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 204).
+Transfer of tensor operand I to ComputationNode(0, 204) on Core 1 starts at Cycle 4603887 with origin ComputationNode(0, 94) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 95).
+Transfer of tensor operand I to ComputationNode(0, 95) on Core 0 starts at Cycle 4648972 with origin ComputationNode(0, 95) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 205).
+Transfer of tensor operand I to ComputationNode(0, 205) on Core 1 starts at Cycle 4652812 with origin ComputationNode(0, 95) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 96).
+Transfer of tensor operand I to ComputationNode(0, 96) on Core 0 starts at Cycle 4697897 with origin ComputationNode(0, 96) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 206).
+Transfer of tensor operand I to ComputationNode(0, 206) on Core 1 starts at Cycle 4701737 with origin ComputationNode(0, 96) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 97).
+Transfer of tensor operand I to ComputationNode(0, 97) on Core 0 starts at Cycle 4746822 with origin ComputationNode(0, 97) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 207).
+Transfer of tensor operand I to ComputationNode(0, 207) on Core 1 starts at Cycle 4750662 with origin ComputationNode(0, 97) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 98).
+Transfer of tensor operand I to ComputationNode(0, 98) on Core 0 starts at Cycle 4795747 with origin ComputationNode(0, 98) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 208).
+Transfer of tensor operand I to ComputationNode(0, 208) on Core 1 starts at Cycle 4799587 with origin ComputationNode(0, 98) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 99).
+Transfer of tensor operand I to ComputationNode(0, 99) on Core 0 starts at Cycle 4844672 with origin ComputationNode(0, 99) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 209).
+Transfer of tensor operand I to ComputationNode(0, 209) on Core 1 starts at Cycle 4848512 with origin ComputationNode(0, 99) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 100).
+Transfer of tensor operand I to ComputationNode(0, 100) on Core 0 starts at Cycle 4893597 with origin ComputationNode(0, 100) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 210).
+Transfer of tensor operand I to ComputationNode(0, 210) on Core 1 starts at Cycle 4897437 with origin ComputationNode(0, 100) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 101).
+Transfer of tensor operand I to ComputationNode(0, 101) on Core 0 starts at Cycle 4942522 with origin ComputationNode(0, 101) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 211).
+Transfer of tensor operand I to ComputationNode(0, 211) on Core 1 starts at Cycle 4946362 with origin ComputationNode(0, 101) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 102).
+Transfer of tensor operand I to ComputationNode(0, 102) on Core 0 starts at Cycle 4991447 with origin ComputationNode(0, 102) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 212).
+Transfer of tensor operand I to ComputationNode(0, 212) on Core 1 starts at Cycle 4995287 with origin ComputationNode(0, 102) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 103).
+Transfer of tensor operand I to ComputationNode(0, 103) on Core 0 starts at Cycle 5040372 with origin ComputationNode(0, 103) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 213).
+Transfer of tensor operand I to ComputationNode(0, 213) on Core 1 starts at Cycle 5044212 with origin ComputationNode(0, 103) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 104).
+Transfer of tensor operand I to ComputationNode(0, 104) on Core 0 starts at Cycle 5089297 with origin ComputationNode(0, 104) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 214).
+Transfer of tensor operand I to ComputationNode(0, 214) on Core 1 starts at Cycle 5093137 with origin ComputationNode(0, 104) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 105).
+Transfer of tensor operand I to ComputationNode(0, 105) on Core 0 starts at Cycle 5138222 with origin ComputationNode(0, 105) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 215).
+Transfer of tensor operand I to ComputationNode(0, 215) on Core 1 starts at Cycle 5142062 with origin ComputationNode(0, 105) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 106).
+Transfer of tensor operand I to ComputationNode(0, 106) on Core 0 starts at Cycle 5187147 with origin ComputationNode(0, 106) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 216).
+Transfer of tensor operand I to ComputationNode(0, 216) on Core 1 starts at Cycle 5190987 with origin ComputationNode(0, 106) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 107).
+Transfer of tensor operand I to ComputationNode(0, 107) on Core 0 starts at Cycle 5236072 with origin ComputationNode(0, 107) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 217).
+Transfer of tensor operand I to ComputationNode(0, 217) on Core 1 starts at Cycle 5239912 with origin ComputationNode(0, 107) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 108).
+Transfer of tensor operand I to ComputationNode(0, 108) on Core 0 starts at Cycle 5284997 with origin ComputationNode(0, 108) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 218).
+Transfer of tensor operand I to ComputationNode(0, 218) on Core 1 starts at Cycle 5288837 with origin ComputationNode(0, 108) and is coming from the offchip core
+	Core 0 already has the tensor of operand W in its L1 memory for ComputationNode(0, 109).
+Transfer of tensor operand I to ComputationNode(0, 109) on Core 0 starts at Cycle 5333922 with origin ComputationNode(0, 109) and is coming from the offchip core
+	Core 1 already has the tensor of operand W in its L1 memory for ComputationNode(0, 219).
+Transfer of tensor operand I to ComputationNode(0, 219) on Core 1 starts at Cycle 5337762 with origin ComputationNode(0, 109) and is coming from the offchip core
