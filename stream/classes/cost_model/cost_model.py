@@ -56,16 +56,18 @@ class StreamCostModelEvaluation:
         """
         # Aya
         tensors_printing_file = self.results_path + "/tensors_details_for_objectFifos.txt"
-        with open(tensors_printing_file, "a") as ff:
-            results = schedule_graph(
-                self.workload,
-                self.accelerator,
-                #self.layer_stacks,
-                ff,
-                #candidate_selection=self.scheduler_candidate_selection,
-                operands_to_prefetch=self.operands_to_prefetch,
-                scheduling_order=self.scheduling_order,
-            )
+        links_printing_file = self.results_path + "/links_chosen_for_transfers_between_cores.txt"
+        
+        results = schedule_graph(
+            self.workload,
+            self.accelerator,
+            #self.layer_stacks,
+            tensors_printing_file,
+            links_printing_file,
+            #candidate_selection=self.scheduler_candidate_selection,
+            operands_to_prefetch=self.operands_to_prefetch,
+            scheduling_order=self.scheduling_order,
+        )
         self.latency = results[0]
         self.total_cn_onchip_energy = results[1]
         self.total_cn_offchip_link_energy, self.total_cn_offchip_memory_energy = (

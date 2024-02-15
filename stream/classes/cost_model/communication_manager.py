@@ -2,6 +2,9 @@ import itertools
 from math import ceil
 import networkx as nx
 
+# Aya
+import sys
+
 from zigzag.classes.hardware.architecture.core import Core
 from stream.classes.workload.tensor import Tensor
 from stream.classes.hardware.architecture.utils import intersections
@@ -88,14 +91,38 @@ class CommunicationManager:
         return shortest_paths
 
     def get_links_for_all_core_pairs(self):
-        communication_links = {}
-        for pair, path in self.shortest_paths.items():
-            traversed_edges = [(i, j) for i, j in zip(path, path[1:])]
-            communication_links[pair] = [
-                self.accelerator.cores.edges[traversed_edge]["cl"]
-                for traversed_edge in traversed_edges
-            ]
-            # print(pair, communication_links[pair])
+        # communication_links = {}
+        # for pair, path in self.shortest_paths.items():
+        #     traversed_edges = [(i, j) for i, j in zip(path, path[1:])]
+        #     communication_links[pair] = [
+        #         self.accelerator.cores.edges[traversed_edge]["cl"]
+        #         for traversed_edge in traversed_edges
+        #     ]
+        #     # print(pair, communication_links[pair])
+        # return communication_links
+
+        # Aya: commented the above code to return multiple parallel links instead of one
+        cores_pairs = [(producer_core, consumer_core) for producer_core, consumer_core in itertools.product(
+            self.accelerator.cores.nodes(), self.accelerator.cores.nodes()
+        )]
+        communication_links = dict.fromkeys(cores_pairs, []) 
+        print("==== Printing the edges inside get_links_for_all_core_pairs() ====")
+        # print(communication_links)
+        if(self.accelerator.parallel_links_flag == True):
+            for producer, consumer, edge_idx in self.accelerator.cores.edges:
+                if(communication_links[(producer, consumer)]) == []:
+                        communication_links[(producer, consumer)] = [(self.accelerator.cores.edges[(producer, consumer, edge_idx)]["cl"])]#multi_link_cores.edges[(producer, consumer, edge_idx)])] 
+                else:
+                        communication_links[(producer, consumer)].append(self.accelerator.cores.edges[(producer, consumer, edge_idx)]["cl"])#multi_link_cores.edges[(producer, consumer, edge_idx)])
+        else:
+            for producer, consumer in self.accelerator.cores.edges:
+                if(communication_links[(producer, consumer)]) == []:
+                        communication_links[(producer, consumer)] = [(self.accelerator.cores.edges[(producer, consumer)]["cl"])]#multi_link_cores.edges[(producer, consumer, edge_idx)])] 
+                else:
+                        communication_links[(producer, consumer)].append(self.accelerator.cores.edges[(producer, consumer)]["cl"])#multi_link_cores.edges[(producer, consumer, edge_idx)])
+            
+        print(communication_links)
+        print("====================================")
         return communication_links
 
     def get_links_for_pair(self, sender, receiver):
@@ -233,7 +260,7 @@ class CommunicationManager:
 
 
     def get_links_idle_window(
-        self, links: list, best_case_start: int, duration: int, tensors: list
+        self, links: list, best_case_start: int, tensors: list
     ) -> int:
         """Return the timestep at which tensor can be transfered across the links.
         Both links must have an idle window large enough for the transfer.
@@ -246,20 +273,62 @@ class CommunicationManager:
             tensors (list): The tensors to be transferred. Used to broadcast from previous transfer.
         """
         assert len(links) > 0
-
         idle_intersections = []
-        for i, (link, req_bw) in enumerate(links.items()):
-            req_bw = min(req_bw, link.bandwidth)  # ceil the bw
-            windows = link.get_idle_window(req_bw, duration, best_case_start, tensors)
-            if i == 0:
-                idle_intersections = windows
+
+        best_idle_intersections = []
+        best_idle_intersections.append((sys.maxsize, sys.maxsize))
+        best_duration = sys.maxsize
+
+        # Aya: added this to support the potential of having multiple links
+        for path in links:
+            if hasattr(path, '__iter__'):
+                duration = max([ceil(tensors[0].size / link.bandwidth) for link in path])
+                for i, (link, req_bw) in enumerate(path.items()):
+                    req_bw = min(req_bw, link.bandwidth)  # ceil the bw
+                    windows = link.get_idle_window(req_bw, duration, best_case_start, tensors)
+                    if i == 0:
+                        idle_intersections = windows
+                    else:
+                        idle_intersections = intersections(idle_intersections, windows)
+                        idle_intersections = [
+                            period for period in idle_intersections
+                            if period[1] - period[0] >= duration
+                        ]
+                # Aya: added this to define a rule for deciding which path to choose
+                        # Aya: I'm doing it after the loop since the above loop is meant to go through the multiple links inside one path, in case the cores are not directly connected 
+                if idle_intersections[0][0] < best_idle_intersections[0][0]:
+                    best_idle_intersections = idle_intersections
+                    best_duration = duration
+                    best_link = path
             else:
-                idle_intersections = intersections(idle_intersections, windows)
-                idle_intersections = [
-                    period for period in idle_intersections
-                    if period[1] - period[0] >= duration
-                ]
-        return idle_intersections[0][0]
+                duration = ceil(tensors[0].size / path.bandwidth)
+                link = path
+                req_bw = path.bandwidth
+                req_bw = min(req_bw, link.bandwidth)  # ceil the bw
+                windows = link.get_idle_window(req_bw, duration, best_case_start, tensors)
+                idle_intersections = windows
+                # Aya: added this to define a rule for deciding which 
+                if idle_intersections[0][0] < best_idle_intersections[0][0]:
+                    best_idle_intersections = idle_intersections
+                    best_duration = duration
+                    best_link = path
+
+        return best_idle_intersections[0][0], best_duration, best_link
+
+        # Aya: The following commented code was there before adding support for multiple parallel links between cores
+        # idle_intersections = []
+        # for i, (link, req_bw) in enumerate(links.items()):
+        #     req_bw = min(req_bw, link.bandwidth)  # ceil the bw
+        #     windows = link.get_idle_window(req_bw, duration, best_case_start, tensors)
+        #     if i == 0:
+        #         idle_intersections = windows
+        #     else:
+        #         idle_intersections = intersections(idle_intersections, windows)
+        #         idle_intersections = [
+        #             period for period in idle_intersections
+        #             if period[1] - period[0] >= duration
+        #         ]
+        # return idle_intersections[0][0]
 
         # The following commented code was there before adding support for broadcast
         # link = links[0]

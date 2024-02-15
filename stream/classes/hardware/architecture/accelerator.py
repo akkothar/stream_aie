@@ -1,5 +1,5 @@
 from math import ceil
-from networkx import DiGraph
+from networkx import DiGraph, MultiDiGraph
 
 from zigzag.classes.hardware.architecture.core import Core
 from stream.classes.cost_model.memory_manager import MemoryManager
@@ -17,13 +17,15 @@ class Accelerator:
     def __init__(
         self,
         name,
-        cores: DiGraph,
+        cores,  # Aya: this could be a Digraph or MultiDigraph depending on the parallel_links_flag 
+        parallel_links_flag, # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
         offchip_core_id=None,
     ):
         self.name = name
         self.cores = cores
         self.offchip_core_id = offchip_core_id
         self.memory_manager = MemoryManager(self)
+        self.parallel_links_flag = parallel_links_flag # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
         self.communication_manager = CommunicationManager(self)
 
     def __str__(self) -> str:
@@ -71,7 +73,7 @@ class Accelerator:
             tensor, core, initial_timestep, available_timestep, memory_op
         )
 
-    def remove(self, tensor, core, memory_op, timestep, write_back_to_offchip=False):
+    def remove(self, tensor, core, memory_op, timestep, links_printing_file, write_back_to_offchip=False):
         """Remove tensor from core. If required, transfer to offchip before removal.
 
         Args:
@@ -106,6 +108,7 @@ class Accelerator:
                 self.offchip_core_id,
                 memory_op,
                 non_evictable_tensors=[],
+                links_printing_file=links_printing_file,
                 sending_core_id=core.id,
             )
             # There should be no evictions as we are writing to offchip
@@ -128,7 +131,7 @@ class Accelerator:
         return current_timestep, link_energy_cost, memory_energy_cost
 
     def remove_all(
-        self, core, memory_operand, timestep, exceptions=[], write_back_to_offchip=False
+        self, core, memory_operand, timestep, links_printing_file, exceptions=[], write_back_to_offchip=False
     ):
         """Remove all tensors from a core's memory with the given memory operand.
         If required, the tensors are written back to offchip before removal.
@@ -150,7 +153,7 @@ class Accelerator:
         ):
             if not tensor in exceptions:
                 t, link_energy_cost, memory_energy_cost = self.remove(
-                    tensor, core, memory_operand, t, write_back_to_offchip
+                    tensor, core, memory_operand, t, links_printing_file, write_back_to_offchip
                 )
                 total_link_energy_cost += link_energy_cost
                 total_memory_energy_cost += memory_energy_cost
@@ -162,6 +165,7 @@ class Accelerator:
         core: Core,
         memory_op: str,
         timestep: int,
+        links_printing_file: str,
         tensors_to_avoid_evicting: list = [],
     ):
         """Make space for the given tensor on the given core by evicting already stored tensors if necessary.
@@ -208,6 +212,7 @@ class Accelerator:
                 core,
                 memory_op,
                 timestep,
+                links_printing_file,
                 write_back_to_offchip=True,
             )
             t_evictions_complete = max(t_evictions_complete, t_eviction_complete)
@@ -218,6 +223,10 @@ class Accelerator:
             total_eviction_link_energy_cost,
             total_eviction_memory_energy_cost,
         )
+    
+    # Aya: printing the link used in each tensor transfer by calling the following function
+    def print_to_file_chosen_links_between_cores(self, sender_core, receiving_core, chosen_link, printing_file): 
+        print("The chosen link to transfer from {} to {} is {}".format(sender_core, receiving_core, chosen_link), file=printing_file)
 
     def transfer_tensor_to_core(
         self,
@@ -225,6 +234,7 @@ class Accelerator:
         receiving_core_id: int,
         tensor_operand: str,
         non_evictable_tensors: list,
+        links_printing_file: str,  # Aya
         sending_core_id: int = None,
     ):
         """
@@ -304,6 +314,7 @@ class Accelerator:
             receiving_core,
             tensor_operand,
             enough_space_timestep,
+            links_printing_file,
             non_evictable_tensors,
         )
         ################################# STEP 4 #################################
@@ -313,14 +324,28 @@ class Accelerator:
         # TODO there will be multiple possible cores to transfer between.
         # TODO For now, we take the first one
         sender_core = sender_cores[0]
-        links = self.communication_manager.get_links_for_pair(
+
+        links = self.communication_manager.get_links_for_pair(  
             sender_core, receiving_core
         )
-        links = {link: link.bandwidth for link in links}  # Aya: added for broadcasting
-        transfer_duration = max([ceil(tensor.size / link.bandwidth) for link in links])
-        transfer_start = self.communication_manager.get_links_idle_window(
-            links, evictions_complete_timestep, transfer_duration, [tensor,]
+        for path in links:
+            if hasattr(path, '__iter__'):
+                links = {link: link.bandwidth for link in path}  # Aya: to support multiple parallel paths between a pair of cores where each path could be made of multiple links (i.e., if the pair of cores are not directly connected)
+            else:
+                links = {path: path.bandwidth}
+        # links = {link: link.bandwidth for link in links} # added for broadcasting
+            
+        # Aya: moved the following calculation of transfer_duration to happen inside get_links_idle_window and to be returned by it since this will differ if we are considenring multiple parallel links
+        # transfer_duration = max([ceil(tensor.size / link.bandwidth) for link in links])
+            
+        transfer_start, transfer_duration, chosen_link = self.communication_manager.get_links_idle_window(
+            links, evictions_complete_timestep, [tensor,]
         )
+
+        # Aya: printing the link used in each tensor transfer by calling the following function
+        with open(links_printing_file, "a") as ff:
+            self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, chosen_link, ff)
+
         transfer_end = transfer_start + transfer_duration
         ################################# STEP 5 #################################
         # Spawn the tensor on the receiving core
@@ -354,6 +379,7 @@ class Accelerator:
                     sender_core,
                     tensor.memory_operand,
                     transfer_end,
+                    links_printing_file,
                     write_back_to_offchip=False,
                 )
         ################################# STEP 8 #################################

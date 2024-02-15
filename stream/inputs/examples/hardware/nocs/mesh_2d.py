@@ -1,6 +1,6 @@
 import numpy as np
 import networkx as nx
-from networkx import DiGraph
+from networkx import DiGraph, MultiDiGraph
 
 from stream.classes.hardware.architecture.communication_link import CommunicationLink
 from zigzag.classes.hardware.architecture.core import Core
@@ -40,6 +40,7 @@ def have_shared_memory(a, b):
 
 def get_2d_mesh(
     cores,
+    parallel_links_flag, # Aya
     nb_rows,
     nb_cols,
     bandwidth,
@@ -164,14 +165,24 @@ def get_2d_mesh(
                 edges.append((core, offchip_core, {"cl": generic_test_link}))
                 edges.append((offchip_core, core, {"cl": generic_test_link}))
 
-            # for core_1 in cores:
-            #     for core_2 in cores:
-            #         if core_1 == core_2:
-            #             continue
-            #         edges.append((core_1, core_2, {"cl": generic_test_link}))   
-            #         #edges.append((core_2, core_1, {"cl": generic_test_link}))  
+            for core_1 in cores:
+                for core_2 in cores:
+                    if core_1 == core_2:
+                        continue
+                    edges.append((core_1, core_2, {"cl": generic_test_link}))   
+                    #edges.append((core_2, core_1, {"cl": generic_test_link}))  
 
     # Build the graph using the constructed list of edges
-    H = DiGraph(edges)
+    single_digraph = DiGraph(edges)
+    multi_digraph = MultiDiGraph(edges)
+
+    if(parallel_links_flag == True):
+        H = multi_digraph
+    else:
+        H = single_digraph
+
+    print("===== Printing the chosen H at the end of get_2d_mesh =====")
+    print(H)
+    print("===================================================")
 
     return H

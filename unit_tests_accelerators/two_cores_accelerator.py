@@ -13,9 +13,12 @@ cores = [one_aie_core(0), one_aie_core(1)]
 offchip_core_id = 6
 offchip_core = shim_core(id=offchip_core_id) # basically DRAM
 
+parallel_links_flag = True # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
+
 # Comment out the offchip_bandwidth because we can get this attribute from the offchip_core (if it is defined), thus no need to manually define it
 cores_graph = get_2d_mesh(
     cores,
+    parallel_links_flag,  # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
     nb_rows=1,
     nb_cols=2,
     bandwidth=64*8,
@@ -27,5 +30,5 @@ cores_graph = get_2d_mesh(
 )  # , offchip_bandwidth=32)
 
 accelerator = Accelerator(
-    "AIE2_IPU", cores_graph, offchip_core_id=offchip_core_id
+    "AIE2_IPU", cores_graph, parallel_links_flag, offchip_core_id=offchip_core_id
 )

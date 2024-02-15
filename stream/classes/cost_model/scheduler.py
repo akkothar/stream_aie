@@ -41,7 +41,7 @@ def initialize_offchip_tensors(G: DiGraph, accelerator: Accelerator):
 
 
 def prefetch_constant_operands(
-    G: DiGraph, accelerator: Accelerator, operands_to_prefetch: list
+    G: DiGraph, accelerator: Accelerator, operands_to_prefetch: list, links_printing_file: str  # Aya
 ):
     total_cn_offchip_link_energy = 0
     total_cn_offchip_memory_energy = 0
@@ -67,7 +67,7 @@ def prefetch_constant_operands(
                         eviction_memory_energy_cost,
                         came_from_offchip,
                     ) = accelerator.transfer_tensor_to_core(
-                        tensor, core_allocation, memory_op, []
+                        tensor, core_allocation, memory_op, [], links_printing_file
                     )
                     assert came_from_offchip
                     total_cn_offchip_link_energy += transfer_link_energy_cost
@@ -175,7 +175,7 @@ def get_tensors_needed_for_node(node: ComputationNode, G: DiGraph):
 
 
 def clear_memories(
-    accelerator: Accelerator, core: Core, memory_operands, timestep, exceptions=[]
+    accelerator: Accelerator, core: Core, memory_operands, timestep, links_printing_file, exceptions=[]
 ):
     total_eviction_to_offchip_link_energy = 0
     total_eviction_to_offchip_memory_energy = 0
@@ -185,7 +185,7 @@ def clear_memories(
             eviction_link_energy_cost,
             eviction_memory_energy_cost,
         ) = accelerator.remove_all(
-            core, too_large_operand, timestep, exceptions, write_back_to_offchip=True
+            core, too_large_operand, timestep, links_printing_file, exceptions, write_back_to_offchip=True
         )
         total_eviction_to_offchip_link_energy += eviction_link_energy_cost
         total_eviction_to_offchip_memory_energy += eviction_memory_energy_cost
@@ -217,6 +217,7 @@ def check_for_removal(
     node: ComputationNode,
     G: DiGraph,
     timestep: int,
+    links_printing_file: str, # Aya
 ):
     offchip_core_id = accelerator.offchip_core_id
     for tensor_used_by_node in tensors:
@@ -271,6 +272,7 @@ def check_for_removal(
                     core,
                     tensor_used_by_node.memory_operand,
                     timestep_for_removal,
+                    links_printing_file,  # Aya
                 )
 
 
@@ -278,7 +280,8 @@ def schedule_graph(
     G: DiGraph,
     accelerator: Accelerator,
     #layer_stacks: list,
-    file,  # Aya: added this to print the number of tensors and tensor sizes needed by each CN
+    tensor_sizes_file,  # Aya: added this to print the number of tensors and tensor sizes needed by each CN
+    links_printing_file, # Aya
     cores_idle_from=None,
     operands_to_prefetch=[],
     scheduling_order=None,
@@ -350,7 +353,7 @@ def schedule_graph(
         prefetch_eviction_to_offchip_memory_energy,
         full_dbg_transfer_prefetch_weights_end_timings,  # Aya: added this extra parameter to print for debugging
         cores_prefetched_to # Aya: added this extra parameter to print for debugging
-    ) = prefetch_constant_operands(G, accelerator, operands_to_prefetch)
+    ) = prefetch_constant_operands(G, accelerator, operands_to_prefetch, links_printing_file)
 
     total_cn_offchip_link_energy += prefetch_cn_offchip_link_energy
     total_cn_offchip_memory_energy += prefetch_cn_offchip_memory_energy
@@ -380,10 +383,11 @@ def schedule_graph(
         )
 
         # Aya: added this to print the number of tensors and tensor sizes needed by each CN
-        print("\n\tPrinting tensors for {}".format(best_candidate), file=file)
-        for new_tensor in tensors_this_candidate_needs:
-            print("Tensor with size:{} bits, operand:{}, with loop dimensions{} and loop ranges{}. It is also consumed by {}".format(new_tensor.size, new_tensor.layer_operand, new_tensor.loop_dimensions, new_tensor.loop_ranges, new_tensor.origin), file=file)
-    
+        with open(tensor_sizes_file, "a") as ff:
+            print("\n\tPrinting tensors for {}".format(best_candidate), file=ff)
+            for new_tensor in tensors_this_candidate_needs:
+                print("Tensor with size:{} bits, operand:{}, with loop dimensions{} and loop ranges{}. It is also consumed by {}".format(new_tensor.size, new_tensor.layer_operand, new_tensor.loop_dimensions, new_tensor.loop_ranges, new_tensor.origin), file=ff)
+        
         ## Step 1
         # There could be operands that are too large to store in the highest memory on the core
         # The tensors stored in these memories should be evicted and potentially written back to off-chip
@@ -398,6 +402,7 @@ def schedule_graph(
             core,
             best_candidate.too_large_operands,
             timestep,
+            links_printing_file,
             exceptions=tensors_this_candidate_needs,
         )
         total_eviction_to_offchip_link_energy += clear_link_energy
@@ -422,6 +427,7 @@ def schedule_graph(
                 core_id,
                 tensor_operand,
                 tensors_this_candidate_needs,
+                links_printing_file, # Aya
             )
             # Update the possible start time of this node
             timestep = max(timestep, transfer_complete_timestep)
@@ -511,6 +517,7 @@ def schedule_graph(
             best_candidate,
             G,
             end,
+            links_printing_file, # Aya
         )
 
         ## Step 7
@@ -528,6 +535,7 @@ def schedule_graph(
                     core,
                     output_tensor.memory_operand,
                     end,
+                    links_printing_file,
                     write_back_to_offchip=True,
                 )
                 total_sink_layer_output_offchip_link_energy += link_energy_cost
