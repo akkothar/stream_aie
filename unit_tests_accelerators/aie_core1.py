@@ -45,7 +45,7 @@ def get_memory_hierarchy(multiplier_array):
 
     l1_oiw = MemoryInstance(
         name="l1_oiw",
-        size=256*1024*8, #64*1024*8,  # Aya: the capacity of a core's data memory is 64 KB
+        size=128*1024*8, #64*1024*8,  # Aya: the capacity of a core's data memory is 64 KB
         r_bw=512,  # Aya: two read ports with a bandwidth of 256 bits/cycle each
         w_bw=256,  # Aya: one write port with a bandwidth of 256 bits/cycle
         r_cost=1,

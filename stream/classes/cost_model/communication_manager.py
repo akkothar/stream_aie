@@ -248,14 +248,17 @@ class CommunicationManager:
                 k for k, v in cn.memory_operand_links.items() if v == mem_op
             )
             tensors.append(cn.operand_tensors[layer_op])
+        # print("===Printing the parameters of get_links_idle_window inside block_offchip_links===")
+        # print("links_to_block = {}, start_timestep = {}, duration = {}, tensors = {}".format(links_to_block, start_timestep, duration, tensors))
+        # print("===========================================================")
         # Get idle window of the involved links
-        block_start = self.get_links_idle_window(
-            links_to_block, start_timestep, duration, tensors
+        block_start, new_duration, used_link = self.get_links_idle_window(
+            links_to_block, start_timestep, tensors   # Aya: removed the duration from the parameters because it is calculated internally
         )
-        # Get the 
+        
         for link, req_bw in links_to_block.items():
             req_bw = ceil(req_bw)
-            link.block(block_start, duration, tensors, activity=req_bw)
+            link.block(block_start, new_duration, tensors, activity=req_bw)  # Aya: changed it to the duration returned from the get_links_idle_window function
         return block_start
 
 
