@@ -252,8 +252,9 @@ class CommunicationManager:
         # print("links_to_block = {}, start_timestep = {}, duration = {}, tensors = {}".format(links_to_block, start_timestep, duration, tensors))
         # print("===========================================================")
         # Get idle window of the involved links
+        # Arne: Added duration for blocking to avoid it only blocking the CN computation partially
         block_start, new_duration, used_link = self.get_links_idle_window(
-            links_to_block, start_timestep, tensors   # Aya: removed the duration from the parameters because it is calculated internally
+            links_to_block, start_timestep, tensors, duration   # Aya: removed the duration from the parameters because it is calculated internally
         )
         
         for link, req_bw in links_to_block.items():
@@ -263,7 +264,7 @@ class CommunicationManager:
 
 
     def get_links_idle_window(
-        self, links: list, best_case_start: int, tensors: list
+        self, links: list, best_case_start: int, tensors: list, duration: int=None,
     ) -> int:
         """Return the timestep at which tensor can be transfered across the links.
         Both links must have an idle window large enough for the transfer.
@@ -304,7 +305,8 @@ class CommunicationManager:
                     best_duration = duration
                     best_link = path
             else:
-                duration = ceil(tensors[0].size / path.bandwidth)
+                if not duration:
+                    duration = ceil(tensors[0].size / path.bandwidth)
                 link = path
                 req_bw = path.bandwidth
                 req_bw = min(req_bw, link.bandwidth)  # ceil the bw
