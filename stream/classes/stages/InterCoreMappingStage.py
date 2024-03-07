@@ -74,12 +74,18 @@ class InterCoreMappingStage(Stage):
         self.plot_data_transfer = plot_data_transfer
         self.operands_to_prefetch = operands_to_prefetch
         
+        # Aya
+        self.aya_dfg = kwargs["aya_dfg"]
+
         #self.original_workload = kwargs["original_workload"]
         self.scheduling_order = kwargs.get("scheduling_order", None)
 
-
         # Aya: added this to customize the path to the output
         self.results_path = kwargs["results_path"]
+
+         # Aya: added this to print the original DFG workload before applying any splitting
+        # with open(self.results_path + "/testing_cns_preds_Original_DFG_in_InterStage.txt", "a") as ff:
+        #     self.print_cns_preds(ff)
 
         # Determine the set of all (layer, group) combinations to be allocated separately
         self.layer_groups = sorted(
@@ -143,6 +149,12 @@ class InterCoreMappingStage(Stage):
             max(core_ids) - min(core_ids) + 1
         )  # Assuming they are incrementing with step size 1
 
+    # Aya: added this function to print information about the depth of object fifos by checking the number of predecessors for each CN in the workload graph
+    def print_cns_preds(self, printing_file):
+        for node in self.aya_dfg:
+            print("Predecessors of Node {} are: {}\n".format(node.id, list((self.aya_dfg.predecessors(node)))), file=printing_file)
+        #print(nx.dfs_successors(self.workload), file=printing_file)
+
     def run(self):
         """Run the InterCoreMappingStage by checking if we have a fixed core_allocation.
         - if yes: evaluate fixed core allocation
@@ -152,10 +164,16 @@ class InterCoreMappingStage(Stage):
         logger.info(f"Start InterCoreMappingStage.")
 
         # Aya: paths to files for exporting useful information about the scheduling and the mapping outputs
-        printing_file = self.results_path + "/check_transfer_cycles.txt"
+        cns_start_end_cycles_printing_file = self.results_path + "/check_cns_start_end_cycles.txt"
+        tensors_transfer_end_cycles = self.results_path + "/check_tensors_end_transfer_cycles.txt"
         prefetch_weights_printing_file = self.results_path + "/check_weights_prefetch_transfer_cycles.txt"
         actual_links_printing_file = self.results_path + "/check_actual_cores_links.txt"
         mapping_output_printing_file = self.results_path + "/mapping_output.txt"
+
+        # print("****************************************")
+        # print(nx.dfs_successors(self.workload))
+        # print("****************************************")
+
 
         if self.individual_length == 0:
             logger.info(f"Evaluating fixed layer-core allocation.")
@@ -171,14 +189,20 @@ class InterCoreMappingStage(Stage):
             """
 
             # Aya: this function prints to file the cycles at the beginning of tensor transfers between cores to help us understand the final schedule
-            with open(printing_file, "a") as ff:
-                self.fitness_evaluator.print_to_file_cycles_results(ff, self.accelerator.cores.nodes())
+            with open(cns_start_end_cycles_printing_file, "a") as ff:
+                self.fitness_evaluator.print_to_file_cns_cycles_results(ff, self.accelerator.cores.nodes())
+
+            with open(tensors_transfer_end_cycles, "a") as ff:
+                self.fitness_evaluator.print_to_file_tensors_transfers_end_cycles(ff, self.accelerator.cores.nodes())
 
             with open(prefetch_weights_printing_file, "a") as ff:
                 self.fitness_evaluator.print_to_file_weights_prefetching_cycles_results(ff)
 
             with open(actual_links_printing_file, "a") as ff:
                 self.fitness_evaluator.print_to_file_used_links_between_cores(ff)
+
+            with open(self.results_path + "/testing_cns_preds.txt", "a") as ff:
+                self.print_cns_preds(ff)
 
             yield scme, None
         else:
@@ -214,14 +238,20 @@ class InterCoreMappingStage(Stage):
                     """
                 # Aya: these functions print to files the cycles at the beginning of tensor transfers between cores to help us understand the final schedule
                 # I'm printing it after the loop to use the final scme and the final transfer cycles
-                with open(printing_file, "a") as ff:
-                    self.fitness_evaluator.print_to_file_cycles_results(ff, self.accelerator.cores.nodes())
+                with open(cns_start_end_cycles_printing_file, "a") as ff:
+                    self.fitness_evaluator.print_to_file_cns_cycles_results(ff, self.accelerator.cores.nodes())
+
+                with open(tensors_transfer_end_cycles, "a") as ff:
+                    self.fitness_evaluator.print_to_file_tensors_transfers_end_cycles(ff, self.accelerator.cores.nodes())
 
                 with open(prefetch_weights_printing_file, "a") as ff:
                     self.fitness_evaluator.print_to_file_weights_prefetching_cycles_results(ff)
 
                 with open(actual_links_printing_file, "a") as ff:
                     self.fitness_evaluator.print_to_file_used_links_between_cores(ff)
+
+                with open(self.results_path + "/testing_cns_preds.txt", "a") as ff:
+                    self.print_cns_preds(ff)
 
                 ############## Aya: added the following code to extract the final cmes after the genetic algorithm and fitness_evaluator
                 old_layer_id = -1

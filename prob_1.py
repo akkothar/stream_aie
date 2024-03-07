@@ -1,3 +1,5 @@
+# The memory needed to fit weights is greater than the total L1 memory capacity of the cores because we are not enabling splitting
+
 from zigzag.classes.stages import *
 from stream.classes.stages import *
 from stream.visualization.schedule import (

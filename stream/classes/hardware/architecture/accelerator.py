@@ -335,7 +335,7 @@ class Accelerator:
                 links = {path: path.bandwidth}
         # links = {link: link.bandwidth for link in links} # added for broadcasting
             
-        # Aya: moved the following calculation of transfer_duration to happen inside get_links_idle_window and to be returned by it since this will differ if we are considenring multiple parallel links
+        # Aya: moved the following calculation of transfer_duration to happen inside get_links_idle_window and to be returned by it since this will differ if we are considering multiple parallel links
         # transfer_duration = max([ceil(tensor.size / link.bandwidth) for link in links])
             
         transfer_start, transfer_duration, chosen_link = self.communication_manager.get_links_idle_window(
@@ -343,8 +343,11 @@ class Accelerator:
         )
 
         # Aya: printing the link used in each tensor transfer by calling the following function
-        with open(links_printing_file, "a") as ff:
-            self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, chosen_link, ff)
+        # print("----- AYAA: Inside transfer_to_core, PRINTING the links_printing_file parametere ------")
+        # print(links_printing_file)
+        # print("_-----------------------------_")
+        # with open(links_printing_file, "a") as ff:
+        #     self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, chosen_link, ff)
 
         transfer_end = transfer_start + transfer_duration
         ################################# STEP 5 #################################

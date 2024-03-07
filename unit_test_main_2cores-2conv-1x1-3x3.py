@@ -33,8 +33,8 @@ results_path = "unit_tests_results/2cores-2conv-1x1-3x3"
 
 
 # Parameters determining the granularity of the layers splitting
-CN_define_mode = 1 # automatically split layers if too big to fit: # manually define outer CN size for all cores and all layers
-split_W_percentage = 0.1 # max percentage of capacity a single node's weights can be
+CN_define_mode =4 # automatically split layers if too big to fit: # manually define outer CN size for all cores and all layers
+split_W_percentage = 0.9 # max percentage of capacity a single node's weights can be
 hint_loops = [("OY", "all")] # outer CN loops, with error in resnet18 plotting
 
 nb_ga_individuals = 16  # number of individuals in each generation

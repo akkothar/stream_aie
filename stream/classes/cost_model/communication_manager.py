@@ -259,7 +259,9 @@ class CommunicationManager:
         
         for link, req_bw in links_to_block.items():
             req_bw = ceil(req_bw)
-            link.block(block_start, new_duration, tensors, activity=req_bw)  # Aya: changed it to the duration returned from the get_links_idle_window function
+            #link.block(block_start, new_duration, tensors, activity=req_bw)  # Aya: changed it to the duration returned from the get_links_idle_window function
+        # Aya: replaced the above code with the following to block only a single link to the offchip core
+        used_link.block(block_start, new_duration, tensors, activity=req_bw)  # Aya: changed it to the duration returned from the get_links_idle_window function
         return block_start
 
 
