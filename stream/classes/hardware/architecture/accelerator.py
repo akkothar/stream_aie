@@ -226,7 +226,8 @@ class Accelerator:
     
     # Aya: printing the link used in each tensor transfer by calling the following function
     def print_to_file_chosen_links_between_cores(self, sender_core, receiving_core, chosen_link, printing_file): 
-        print("The chosen link to transfer from {} to {} is {}".format(sender_core, receiving_core, chosen_link), file=printing_file)
+        #print("The chosen link to transfer from {} to {} is {}".format(sender_core, receiving_core, chosen_link), file=printing_file)
+        print("The link {} has active_ts = {}, active_deltas = {}, and tensors = {}".format(chosen_link, chosen_link.active_ts, chosen_link.active_deltas, chosen_link.tensors), file=printing_file)
 
     def transfer_tensor_to_core(
         self,
@@ -337,17 +338,16 @@ class Accelerator:
             
         # Aya: moved the following calculation of transfer_duration to happen inside get_links_idle_window and to be returned by it since this will differ if we are considering multiple parallel links
         # transfer_duration = max([ceil(tensor.size / link.bandwidth) for link in links])
-            
+        # Aya: printing the link used in each tensor transfer by calling the following function
+        with open(links_printing_file, "a") as ff:
+            print("\t----- AYAA: Inside transfer_to_core, printing details of the links ------", file=ff)
+            for one_link in links:
+                self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, one_link, ff)
+            print("\t_------------------------------_", file=ff)
+
         transfer_start, transfer_duration, chosen_link = self.communication_manager.get_links_idle_window(
             links, evictions_complete_timestep, [tensor,]
         )
-
-        # Aya: printing the link used in each tensor transfer by calling the following function
-        # print("----- AYAA: Inside transfer_to_core, PRINTING the links_printing_file parametere ------")
-        # print(links_printing_file)
-        # print("_-----------------------------_")
-        # with open(links_printing_file, "a") as ff:
-        #     self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, chosen_link, ff)
 
         transfer_end = transfer_start + transfer_duration
         ################################# STEP 5 #################################
@@ -439,9 +439,10 @@ class Accelerator:
     def block_offchip_links(
         self, too_large_operands, core_id, start_timestep, duration, cn
     ) -> int:
-        return self.communication_manager.block_offchip_links(
-            too_large_operands, core_id, start_timestep, duration, cn
-        )
+        with open("offchip_links_blocking_dbg.txt", "a") as dbg_file:        
+            return self.communication_manager.block_offchip_links(
+                too_large_operands, core_id, start_timestep, duration, cn, dbg_file
+            )
 
     def contains_tensor(self, tensor: Tensor, top_instance):
         if isinstance(top_instance, int):  # assume core id

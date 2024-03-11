@@ -5,14 +5,14 @@ from zigzag.classes.hardware.architecture.memory_instance import MemoryInstance
 from zigzag.classes.hardware.architecture.core import Core
 
 
-def get_memory_hierarchy(multiplier_array):
+def get_memory_hierarchy(multiplier_array, offchip_bw):
     """Memory hierarchy variables"""
     """ size=#bit, bw=(read bw, write bw), cost=(read word energy, write work energy) """
     dram = MemoryInstance(
         name="dram",
         size=10000000000,
-        r_bw=16*8,
-        w_bw=16*8,
+        r_bw=offchip_bw,
+        w_bw=offchip_bw,
         r_cost=1000,
         w_cost=1000,
         area=0,
@@ -89,13 +89,13 @@ from zigzag.visualization.graph.memory_hierarchy import (
     visualize_memory_hierarchy_graph,
 )
 
-def get_shim_dma_core(id):
+def get_shim_dma_core(id, offchip_bw):
     """This file defines an off-chip "core". Only the memory information of this core is important.
     The operational array is taken randomly.
     The user should make sure that none of the layers are actually mapped to this core.
     """
     operational_array = get_operational_array()
-    memory_hierarchy = get_memory_hierarchy(operational_array)
+    memory_hierarchy = get_memory_hierarchy(operational_array, offchip_bw)
 
     #visualize_memory_hierarchy_graph(memory_hierarchy)
 

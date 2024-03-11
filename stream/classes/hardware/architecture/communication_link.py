@@ -29,7 +29,7 @@ class CommunicationLink:
         # self.busy_periods = []
         # self.idle_periods = [(0, float("inf"))]
 
-        self.active_periods = [(0, float("inf"), 0)]
+        self.active_periods = [(0, float("inf"), 0)]  # Aya: not used anywhere
         self.active_ts = np.array([0, float("inf")])
         self.active_deltas = np.array([0, 0])
         self.tensors = {}

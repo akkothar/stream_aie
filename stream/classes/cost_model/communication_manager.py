@@ -132,6 +132,10 @@ class CommunicationManager:
             sender_id (Core): the sending core
             receiver_id (Core): the receiving core
         """
+        # if(print_flag):
+        #     print("=============Inside get_links_for_pair=============")
+        #     print("\tFor sender: {} and receiver: {}, the pair_links ] {}".format(sender, receiver, self.pair_links[(sender, receiver)]))
+        #     print("=====================================================")
         return self.pair_links[(sender, receiver)]
 
     def get_links_for_pair_id(self, sender_id, receiver_id):
@@ -214,7 +218,7 @@ class CommunicationManager:
         return link_energy_cost, memory_energy_cost
 
     def block_offchip_links(
-        self, too_large_operands, core_id, start_timestep, duration, cn
+        self, too_large_operands, core_id, start_timestep, duration, cn, dbg_file
     ) -> int:
         """Block the communication link between 'core' and the offchip core starting at timestep 'start_timestep' for duration 'duration'.
 
@@ -225,19 +229,32 @@ class CommunicationManager:
             duration (int): The duration of the blocking in cycles.
             cn (ComputationNode): The computational node for which we are blocking the links.
         """
-        links_to_block = dict() #set()
-        core = self.accelerator.get_core(core_id)
+        links_to_block = dict() #set() 
+        
         offchip_core = self.accelerator.get_core(self.accelerator.offchip_core_id)
+
+        # cores_pairs = [(producer_core, consumer_core) for producer_core, consumer_core in itertools.product(
+        #     self.accelerator.cores.nodes(), self.accelerator.cores.nodes()
+        # ) if producer_core == offchip_core or consumer_core == offchip_core]
+        
+        core = self.accelerator.get_core(core_id)
         if "O" in too_large_operands:
-            links_to_offchip = set(self.get_links_for_pair(core, offchip_core))
+            links_to_offchip = self.get_links_for_pair(core, offchip_core) #set(self.get_links_for_pair(core, offchip_core))
+            # Aya
+            print("For {} with O operand on Core {}, here is a list of the links connecting to the offchip core: {}".format(cn, core_id, links_to_offchip), file=dbg_file)
             req_bw_to_offchip = cn.offchip_bw.wr_in_by_low
             for link in links_to_offchip:
                 links_to_block[link] = links_to_block.get(link, 0) + req_bw_to_offchip
+            print("\t And here is a list of the links to block: {}".format(links_to_block), file=dbg_file)
+            
         if [op for op in too_large_operands if op != "O"]:
-            links_from_offchip = set(self.get_links_for_pair(offchip_core, core))
+            links_from_offchip = self.get_links_for_pair(offchip_core, core) #set(self.get_links_for_pair(offchip_core, core))
+            # Aya
+            print("For {} with I or W operands on Core {}, here is a list of the links connecting to the offchip core: {}".format(cn, core_id, links_from_offchip), file=dbg_file)
             req_bw_from_offchip = cn.offchip_bw.rd_out_to_low
             for link in links_from_offchip:
                 links_to_block[link] = links_to_block.get(link, 0) + req_bw_from_offchip
+            print("\t And here is a list of the links to block: {}".format(links_to_block), file=dbg_file)
         if not too_large_operands:
             return start_timestep
         
@@ -254,7 +271,7 @@ class CommunicationManager:
         # Get idle window of the involved links
         # Arne: Added duration for blocking to avoid it only blocking the CN computation partially
         block_start, new_duration, used_link = self.get_links_idle_window(
-            links_to_block, start_timestep, tensors, duration   # Aya: removed the duration from the parameters because it is calculated internally
+            links_to_block, start_timestep, tensors, duration   
         )
         
         for link, req_bw in links_to_block.items():
@@ -281,6 +298,7 @@ class CommunicationManager:
         assert len(links) > 0
         idle_intersections = []
 
+        # Aya
         best_idle_intersections = []
         best_idle_intersections.append((sys.maxsize, sys.maxsize))
         best_duration = sys.maxsize
