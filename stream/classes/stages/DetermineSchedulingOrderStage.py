@@ -32,6 +32,17 @@ class DetermineSchedulingOrderStage(Stage):
         # We give higher priority to nodes deeper in the graph
         self.scheduling_order = sorted((n.id for n in self.workload.nodes()), reverse=True)
         
+        # Aya: changed the scheduling order to loop over CNs having the same input (activation) tensors first
+        #self.scheduling_order = sorted((n.id for n in self.workload.nodes()), reverse=False)
+        
+        
+        #self.scheduling_order = sorted((n for n in self.workload.nodes()), key=lambda n: n.operand_tensors["I"])    
+        #self.scheduling_order = (n.id for n in self.scheduling_order)
+
+        # print("===== Inside DetermineSchedulineOrderStage =====")
+        # print(self.scheduling_order)
+        # #print(self.workload.nodes())
+        # print("=================================================")
 
         self.kwargs["accelerator"] = self.accelerator
         self.kwargs["workload"] = self.workload

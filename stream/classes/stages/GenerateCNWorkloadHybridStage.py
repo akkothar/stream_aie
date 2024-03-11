@@ -50,6 +50,12 @@ class GenerateCNWorkloadHybridStage(Stage):
         self.workload = workload
         self.accelerator = accelerator
 
+         # Aya: added this to print the original DFG workload before applying any splitting
+         # Aya: added this to customize the path to the output
+        self.results_path = kwargs["results_path"]
+        # with open("testing_cns_preds_Original_DFG_in_INIT_GenerateCNStage.txt", "a") as ff:
+        #     self.print_cns_preds(ff)
+
         # Save for each of the workload's nodes the finer nodes that will be generated
         self.finer_nodes_dict = {}
 
@@ -74,11 +80,21 @@ class GenerateCNWorkloadHybridStage(Stage):
             self.weight_capacities = self.get_weight_capacities()
             # compute the number of splits required for each layer in the original workload
             self.layer_split_factors_k = self.get_layer_split_factors_k()
+    
+    # Aya: added this function to print information about the depth of object fifos by checking the number of predecessors for each CN in the workload graph
+    # def print_cns_preds(self, printing_file):
+    #     for node in self.workload:
+    #         print("Predecessors of Node {} are: {}\n".format(node.id, list((self.workload.predecessors(node)))), file=printing_file)
+    #     #print(nx.dfs_successors(self.workload), file=printing_file)
+
 
     def run(self):
         unique_finer_nodes = []
         # For each node get all the finer nodes and set the intra edges
         G = nx.DiGraph()
+        # Aya added this to capture only the data dependencies without the intra edges dependencies
+        G_without_intra = nx.DiGraph()
+
         for node in nx.topological_sort(self.workload):
             if not isinstance(
                 node, ComputationNode
@@ -96,6 +112,8 @@ class GenerateCNWorkloadHybridStage(Stage):
             # If there is only one finer node for this layer, add the node to the graph
             if not intra_edges:
                 G.add_nodes_from(finer_nodes)
+                # Aya
+                G_without_intra.add_nodes_from(finer_nodes)
 
         # Get all pairs of nodes that we have to extract inter edges for
         all_pairs = self.get_all_node_pairs(self.workload)
@@ -112,6 +130,9 @@ class GenerateCNWorkloadHybridStage(Stage):
                     producer, consumer, finer_producers, finer_consumers
                 )
             G.add_edges_from(inter_edges)
+
+            # Aya
+            G_without_intra.add_edges_from(inter_edges)
             # print(G)
 
         # Set the base_priority value of all nodes in G
@@ -120,6 +141,9 @@ class GenerateCNWorkloadHybridStage(Stage):
         # Set nb of real predecessors of all nodes in G
         self.set_nb_real_predecessors(G)
 
+        # Aya
+        self.set_nb_real_predecessors(G_without_intra)
+
         logger.info(f"Finer graph: {G}.")
 
         kwargs = self.kwargs.copy()
@@ -127,6 +151,10 @@ class GenerateCNWorkloadHybridStage(Stage):
         kwargs["workload"] = G
         kwargs["accelerator"] = self.accelerator
         kwargs["hint_loops"] = self.hint_loops
+
+        # Aya: will print it as a check from the InterCoreMappingStage
+        kwargs["aya_dfg"] = G_without_intra
+
         sub_stage = self.list_of_callables[0](self.list_of_callables[1:], **kwargs)
         for cme, extra_info in sub_stage.run():
             yield cme, extra_info

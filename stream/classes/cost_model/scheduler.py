@@ -363,7 +363,8 @@ def schedule_graph(
     )
 
     # Aya: added this to store details about the schedule to be exported to file
-    full_dbg_transfer_timings = []
+    dbg_cns_start_end_cycles = []
+    dbg_tensors_transfer_details = []
 
     done = False
     while not done:
@@ -386,7 +387,13 @@ def schedule_graph(
         with open(tensor_sizes_file, "a") as ff:
             print("\n\tPrinting tensors for {}".format(best_candidate), file=ff)
             for new_tensor in tensors_this_candidate_needs:
-                print("Tensor with size:{} bits, operand:{}, with loop dimensions{} and loop ranges{}. It is also consumed by {}".format(new_tensor.size, new_tensor.layer_operand, new_tensor.loop_dimensions, new_tensor.loop_ranges, new_tensor.origin), file=ff)
+                shape = ""
+                for s, e in new_tensor.loop_ranges:
+                    dim = e - s
+                    shape = shape + str(dim) + " x " 
+                shape = shape[:len(shape)-2]
+                print("Tensor with size:{} bytes and shape: {}".format((new_tensor.size / 8), shape), file=ff) 
+                print("\t More details about the tensor: operand:{}, with loop dimensions{} and loop ranges{}. It is also consumed by {}".format(new_tensor.layer_operand, new_tensor.loop_dimensions, new_tensor.loop_ranges, new_tensor.origin), file=ff)
         
         ## Step 1
         # There could be operands that are too large to store in the highest memory on the core
@@ -433,7 +440,7 @@ def schedule_graph(
             timestep = max(timestep, transfer_complete_timestep)
 
             # Aya
-            full_dbg_transfer_timings.append((came_from_offchip, core_id, timestep, transfer_complete_timestep, tensor_operand, tensor, best_candidate))
+            dbg_tensors_transfer_details.append((came_from_offchip, False, core_id, transfer_complete_timestep, tensor_operand, tensor, best_candidate))
 
             # Add the energy costs to their respective trackers
             if came_from_offchip:
@@ -455,6 +462,9 @@ def schedule_graph(
             best_candidate.get_runtime(),
             best_candidate,
         )
+
+        # Aya
+        dbg_tensors_transfer_details.append((True, True, core_id, timestep + best_candidate.get_runtime(),  best_candidate.too_large_operands,  best_candidate.too_large_operands, best_candidate))
 
         ## Step 4
         # Make space for the output tensor of this computation node and spawn it when evictions are complete
@@ -490,6 +500,9 @@ def schedule_graph(
             initial_timestep=start,
             available_timestep=end,
         )
+
+        # Aya
+        dbg_cns_start_end_cycles.append((came_from_offchip, core_id, start, end, tensor_operand, tensor, best_candidate))
 
         ## Step 5
         # Update the start and end time of the node
@@ -576,7 +589,8 @@ def schedule_graph(
         total_sink_layer_output_offchip_memory_energy,
         total_core_to_core_link_energy,
         total_core_to_core_memory_energy,
-        full_dbg_transfer_timings,  # Aya: added this
+        dbg_cns_start_end_cycles,  # Aya: added this to contain the details of the start and end cycles of each CN
+        dbg_tensors_transfer_details, # Aya: added this to contain the end transfer time of each tensor and whether it is coming form offchip core or not
         full_dbg_transfer_prefetch_weights_end_timings, # Aya: added this
         cores_prefetched_to, # Aya: added this
     )

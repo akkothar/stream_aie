@@ -99,7 +99,7 @@ class StreamCostModelEvaluation:
             + self.total_core_to_core_memory_energy
         )
          # Aya: returning the start time of each transfer to help better understand the produced schedule
-        return results[10], results[11], results[12]
+        return results[10], results[11], results[12], results[13]
 
     def plot_schedule(
         self,

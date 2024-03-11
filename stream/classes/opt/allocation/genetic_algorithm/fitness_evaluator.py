@@ -70,7 +70,7 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         )
 
         # Aya: originally, this function used to not return anything, but now I made it return the 
-        self.full_dbg_transfer_timings, self.full_dbg_transfer_prefetch_weights_end_timings, self.cores_prefetched_to = scme.run()
+        self.dbg_cns_start_end_cycles, self.dbg_tensors_transfer_details, self.full_dbg_transfer_prefetch_weights_end_timings, self.cores_prefetched_to = scme.run()
 
         energy = scme.energy
         latency = scme.latency
@@ -79,27 +79,69 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         return energy, latency, scme
 
      # Aya: added the following function to print some details about the produced schedule
-    def print_to_file_cycles_results(self, printing_file, cores):
+    def print_to_file_cns_cycles_results(self, printing_file, cores):
         # first sort the list with respect to the start_cycle
-        self.full_dbg_transfer_timings.sort(key=lambda x: x[2])
+        self.dbg_cns_start_end_cycles.sort(key=lambda x: x[3])
         #for core in cores:
             #print("\n", file=printing_file)
-        for (from_offchip_flag, receiver_core_id, start_cycle, end_cycle, tensor_operand, tensor, CN) in self.full_dbg_transfer_timings:
+        for (from_offchip_flag, receiver_core_id, start_cycle, end_cycle, tensor_operand, tensor, CN) in self.dbg_cns_start_end_cycles:
             #if receiver_core_id == core.id:
-            if end_cycle == -1: 
-                print("\tCore {} already has the tensor {} with operand {} in its L1 memory for {}.".format(receiver_core_id, tensor, tensor.layer_operand, CN), file=printing_file)
-            else:
-                if(from_offchip_flag == False):  
-                    if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
-                        print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It is also consumed by {} and is NOT coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
-                    else:
-                        print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It produced by {} and is NOT coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+            # if end_cycle == -1: 
+            #     print("\tCore {} already has the tensor {} with operand {} in its L1 memory for {}.".format(receiver_core_id, tensor, tensor.layer_operand, CN), file=printing_file)
+            # else:
+
+            # if(from_offchip_flag == False):  
+            #     if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
+            #         print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It is consumed by {} and is NOT coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+            #     else:
+            #         print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It is produced by {} and is NOT coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+            # else:
+            #     if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
+            #         print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It is consumed by {} and is coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+            #     else:
+            #         print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It is produced by {} and is coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+            
+            print("Start time of {} on Core {} is Cycle {}.".format(CN, receiver_core_id, start_cycle), file=printing_file)
+
+    def print_to_file_tensors_transfers_end_cycles(self,  printing_file, cores):
+        # first sort the list with respect to the end of the transfer
+        self.dbg_tensors_transfer_details.sort(key=lambda x: x[3])
+        #for core in cores:
+            #print("\n", file=printing_file)
+        for (from_offchip_flag, is_too_large_operands, receiver_core_id, transfer_complete_cycle, tensor_operand, tensor, CN) in self.dbg_tensors_transfer_details:
+            if not is_too_large_operands:
+                if transfer_complete_cycle == -1: 
+                    print("\tCore {} already has the tensor {} in its L1 memory for {}.".format(receiver_core_id, tensor, CN), file=printing_file)
                 else:
-                    if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
-                        print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It is also consumed by {} and is coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
+                    if(from_offchip_flag == False):  
+                        if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
+                            print("NORMAL Transfer of {} to {} on Core {} is completed at Cycle {}. It is consumed by {} and is NOT coming from the offchip core".format(tensor, CN, receiver_core_id, transfer_complete_cycle, tensor.origin), file=printing_file)
+                        else:
+                            print("NORMAL Transfer of {} to {} on Core {} is completed at Cycle {}. It is produced by {} and is NOT coming from the offchip core".format(tensor, CN, receiver_core_id, transfer_complete_cycle, tensor.origin), file=printing_file)
                     else:
-                        print("Transfer of {} with operand {} to {} on Core {} starts at Cycle {}. It produced by {} and is coming from the offchip core".format(tensor, tensor.layer_operand, CN, receiver_core_id, start_cycle, tensor.origin), file=printing_file)
-                
+                        if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
+                            print("NORMAL Transfer of {} to {} on Core {} is completed at Cycle {}. It is consumed by {} and is coming from the offchip core".format(tensor, CN, receiver_core_id, transfer_complete_cycle, tensor.origin), file=printing_file)
+                        else:
+                            print("NORMAL Transfer of {} to {} on Core {} is completed at Cycle {}. It is produced by {} and is coming from the offchip core".format(tensor, CN, receiver_core_id, transfer_complete_cycle, tensor.origin), file=printing_file)
+            else:
+                if tensor == ["I1"]:
+                    actual_tensor_operand = "I"
+                else:
+                    if tensor == ["I2"]:
+                        actual_tensor_operand = "W"
+                    else:
+                        actual_tensor_operand = "O"
+
+                if transfer_complete_cycle == -1: 
+                    print("\tCore {} already has the tensor {} in its L1 memory for {}.".format(receiver_core_id, actual_tensor_operand, CN), file=printing_file)
+                else:
+                    if(from_offchip_flag == False):  
+                        print("BLOCK Transfer of {} to {} on Core {} is completed at Cycle {}. It is NOT coming from the offchip core".format(actual_tensor_operand, CN, receiver_core_id, transfer_complete_cycle), file=printing_file)
+                    else:
+                        print("BLOCK Transfer of {} to {} on Core {} is completed at Cycle {}. It is coming from the offchip core".format(actual_tensor_operand, CN, receiver_core_id, transfer_complete_cycle), file=printing_file)
+                        
+
+
 #new_tensor.size, new_tensor.layer_operand, new_tensor.origin, new_tensor.loop_dimensions, new_tensor.loop_ranges
 
         # print("##### Inside transfer_tensor_to_core function of accelerator.py, printing the transfer_end #####", file=printing_file)
