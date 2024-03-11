@@ -158,6 +158,7 @@ class CommunicationManager:
         receiver_memory_operand: str,
         start_timestep: int,
         duration: int,
+        chosen_links=None,
     ) -> tuple[int, int, float, float]:
         """Update the links for transfer of a tensor between sender and receiver core at a given timestep.
         A CommunicationEvent is created containing one or more CommunicationLinkEvents,
@@ -179,7 +180,10 @@ class CommunicationManager:
             sender = self.accelerator.get_core(sender)
         if isinstance(receiver, int):
             receiver = self.accelerator.get_core(receiver)
-        links = self.get_links_for_pair(sender, receiver)
+        if not chosen_links:
+            links = self.get_links_for_pair(sender, receiver)
+        else:
+            links = chosen_links
         if not links:  # When sender == receiver
             return 0, 0
 
@@ -317,6 +321,10 @@ class CommunicationManager:
                     best_idle_intersections = idle_intersections
                     best_duration = duration
                     best_link = path
+
+        # Convert the best_link from dict to list of CLs
+        if isinstance(best_link, dict):
+            best_link = list(best_link.keys())
 
         return best_idle_intersections[0][0], best_duration, best_link
 
