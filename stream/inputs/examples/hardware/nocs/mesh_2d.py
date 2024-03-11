@@ -8,7 +8,7 @@ from zigzag.classes.hardware.architecture.core import Core
 # From the AIE-MLs perspective, the throughput of each of the loads and store is 256 bits per clock cycle.
 aya_core_to_core_bw = 256  # bandwidth of every link connecting two neighboring cores
 aya_core_to_mem_tile_bw = 32 * 6
-aya_everything_to_dram_bw = 64 * 8
+#aya_everything_to_dram_bw = 64 * 8
 
 
 def have_shared_memory(a, b):
@@ -48,7 +48,7 @@ def get_2d_mesh(
     pooling_core=None,
     simd_core=None,
     offchip_core=None,
-    axi_channels_num=1, # Aya
+    axi_channels_num=4, # Aya
     #mem_tile_core=None,  # Aya
 ):
     """Return a 2D mesh graph of the cores where each core is connected to its N, E, S, W neighbour.
@@ -154,9 +154,9 @@ def get_2d_mesh(
         # offchip_write_bandwidth = offchip_core.mem_w_bw_dict["O"][0]
 
         for i in range(axi_channels_num):  # Aya: allow a parametrizable number of channels in the AXI interconnect
-            offchip_bandwidth = aya_everything_to_dram_bw
+            offchip_bandwidth = bandwidth
             generic_test_link = CommunicationLink(
-                "Any", "Any", offchip_bandwidth, unit_energy_cost
+                "Any" + str(i), "Any" + str(i), offchip_bandwidth, unit_energy_cost
             )
 
             if not isinstance(offchip_core, Core):

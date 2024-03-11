@@ -11,7 +11,9 @@ from stream.classes.hardware.architecture.accelerator import Accelerator
 # changed all cores to be instances of aie_core1 since all AIE tiles should be identical
 cores = [one_aie_core(0)] 
 offchip_core_id = 6
-offchip_core = shim_core(id=offchip_core_id) # basically DRAM
+aya_everything_to_dram_bw = 64 * 8
+
+offchip_core = shim_core(id=offchip_core_id, offchip_bw=aya_everything_to_dram_bw) # basically DRAM
 
 parallel_links_flag = True # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
 
@@ -21,7 +23,7 @@ cores_graph = get_2d_mesh(
     parallel_links_flag,  # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
     nb_rows=1,
     nb_cols=1,
-    bandwidth=64*8,
+    bandwidth=aya_everything_to_dram_bw,
     pooling_core=[],
     unit_energy_cost=0,
     offchip_core=offchip_core,
