@@ -328,23 +328,24 @@ class Accelerator:
         links = self.communication_manager.get_links_for_pair(  
             sender_core, receiving_core
         )
+        links_nested = []
         for path in links:
             if hasattr(path, '__iter__'):
-                links = {link: link.bandwidth for link in path}  # Aya: to support multiple parallel paths between a pair of cores where each path could be made of multiple links (i.e., if the pair of cores are not directly connected)
+                links_nested.append({link: link.bandwidth for link in path})  # Aya: to support multiple parallel paths between a pair of cores where each path could be made of multiple links (i.e., if the pair of cores are not directly connected)
             else:
-                links = {path: path.bandwidth}
+                links_nested.append({path: path.bandwidth})
         # links = {link: link.bandwidth for link in links} # added for broadcasting
-            
+        links = links_nested
         # Aya: moved the following calculation of transfer_duration to happen inside get_links_idle_window and to be returned by it since this will differ if we are considenring multiple parallel links
         # transfer_duration = max([ceil(tensor.size / link.bandwidth) for link in links])
             
-        transfer_start, transfer_duration, chosen_link = self.communication_manager.get_links_idle_window(
+        transfer_start, transfer_duration, chosen_links = self.communication_manager.get_links_idle_window(
             links, evictions_complete_timestep, [tensor,]
         )
 
         # Aya: printing the link used in each tensor transfer by calling the following function
         with open(links_printing_file, "a") as ff:
-            self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, chosen_link, ff)
+            self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, chosen_links, ff)
 
         transfer_end = transfer_start + transfer_duration
         ################################# STEP 5 #################################
@@ -362,6 +363,7 @@ class Accelerator:
             tensor_operand,
             transfer_start,
             transfer_duration,
+            chosen_links,
         )
         ################################# STEP 7 #################################
         # Remove the transfered tensor from the sender core (excluding DRAM)
