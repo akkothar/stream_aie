@@ -29,8 +29,8 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         node_hw_performances,
         layer_groups_flexible,
         operands_to_prefetch,
-        results_path, # Aya
         scheduling_order=None,
+        results_path=None, # Aya
     ) -> None:
         super().__init__(workload, accelerator, node_hw_performances)
 
@@ -65,8 +65,8 @@ class StandardFitnessEvaluator(FitnessEvaluator):
             pickle_deepcopy(self.workload),
             pickle_deepcopy(self.accelerator),
             self.operands_to_prefetch,
-            self.results_path, # Aya
             self.scheduling_order,
+            self.results_path, # Aya
         )
 
         # Aya: originally, this function used to not return anything, but now I made it return the 
