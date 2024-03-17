@@ -18,6 +18,8 @@ class Accelerator:
         self,
         name,
         cores,  # Aya: this could be a Digraph or MultiDigraph depending on the parallel_links_flag 
+        nb_rows, 
+        nb_cols, 
         parallel_links_flag, # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
         offchip_core_id=None,
     ):
@@ -27,6 +29,10 @@ class Accelerator:
         self.memory_manager = MemoryManager(self)
         self.parallel_links_flag = parallel_links_flag # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
         self.communication_manager = CommunicationManager(self)
+
+        # Aya: added those extra fields to identify the memTile core in the same column as another compute core. This is used in the add_offchip_to_core function inside the IntraCoreMappingStage and should be ultimately used in the exploration of transfer_tensors
+        self.nb_rows = nb_rows
+        self.nb_cols = nb_cols
 
     def __str__(self) -> str:
         return f"Accelerator({self.name})"

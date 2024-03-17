@@ -40,16 +40,18 @@ def have_shared_memory(a, b):
 
 def get_2d_mesh(
     cores,
-    parallel_links_flag, # Aya
+    parallel_links_flag, # Aya: if this is True, the exploration will consider multiple parallel links
     nb_rows,
     nb_cols,
-    bandwidth,
+    axi_bandwidth,
     unit_energy_cost,
+    offchip_read_channels_num, # Aya
+    offchip_write_channels_num, # Aya
+    memTile_read_channels_num, # Aya
+    memTile_write_channels_num, # Aya
     pooling_core=None,
     simd_core=None,
     offchip_core=None,
-    axi_channels_num=4, # Aya
-    #mem_tile_core=None,  # Aya
 ):
     """Return a 2D mesh graph of the cores where each core is connected to its N, E, S, W neighbour.
     We build the mesh by iterating through the row and then moving to the next column.
@@ -71,9 +73,10 @@ def get_2d_mesh(
         offchip_core (Core, optional): If provided, the offchip core that is added.
         offchip_bandwidth (int, optional): If offchip_core is provided, this is the
     """
+    ########### Beginning of the logic for adding the links representing the shared memory
+    # At the moment there is a shared memory link in 4 directions
 
-    cores_array = np.asarray(cores).reshape((nb_rows, nb_cols), order="F")
-
+    cores_array = np.asarray(cores).reshape((nb_rows, nb_cols), order="C")
     edges = []
     # Horizontal edges
     for row in cores_array:
@@ -81,6 +84,9 @@ def get_2d_mesh(
         pairs = zip(row, row[1:])
         for pair in pairs:
             (sender, receiver) = pair
+            # Aya
+            if(sender.core_type == 1 or receiver.core_type == 1):  # skip memTile cores
+                continue
             if not have_shared_memory(sender, receiver):
                 edges.append(
                     (
@@ -98,6 +104,10 @@ def get_2d_mesh(
         pairs = zip(reversed(row), reversed(row[:-1]))
         for pair in pairs:
             (sender, receiver) = pair
+            # Aya
+            if(sender.core_type == 1 or receiver.core_type == 1):  # skip memTile cores
+                continue
+           
             if not have_shared_memory(sender, receiver):
                 edges.append(
                     (
@@ -111,13 +121,16 @@ def get_2d_mesh(
                     )
                 )
            
-
     # Vertical edges
     for col in cores_array.T:
         # From top to bottom (bottom is highest idx)
         pairs = zip(col, col[1:])
         for pair in pairs:
             (sender, receiver) = pair
+            # Aya
+            if(sender.core_type == 1 or receiver.core_type == 1):  # skip memTile cores
+                continue
+           
             if not have_shared_memory(sender, receiver):
                 edges.append(
                     (
@@ -134,7 +147,10 @@ def get_2d_mesh(
         # From bottom to top
         pairs = zip(reversed(col), reversed(col[:-1]))
         for pair in pairs:
+            # Aya
             (sender, receiver) = pair
+            if(sender.core_type == 1 or receiver.core_type == 1):  # skip memTile cores
+                continue
             if not have_shared_memory(sender, receiver):
                 edges.append(
                     (
@@ -147,31 +163,91 @@ def get_2d_mesh(
                         },
                     )
                 )
-           
-    # If there is an offchip core, add a single link for writing to and a single link for reading from the offchip
-    if offchip_core:
-        # offchip_read_bandwidth = offchip_core.mem_r_bw_dict["O"][0]
-        # offchip_write_bandwidth = offchip_core.mem_w_bw_dict["O"][0]
+    ########### End of the logic for adding the links representing the shared memory
+                
+    ########### Beginning of the logic for building the AXI4-Stream network
+    # TODO:
+    # (1) Constraint the number of read, write channels from any core
 
-        for i in range(axi_channels_num):  # Aya: allow a parametrizable number of channels in the AXI interconnect
-            offchip_bandwidth = bandwidth
-            generic_test_link = CommunicationLink(
-                "Any" + str(i), "Any" + str(i), offchip_bandwidth, unit_energy_cost
-            )
+    # counters to keep track of the number of channels already represented with a CommunicationLink
+    offchip_read_count  = 0
+    offchip_write_count = 0
+    memTile_write_count = 0
+    memTile_read_count = 0
 
-            if not isinstance(offchip_core, Core):
-                raise ValueError("The given offchip_core is not a Core object.")
-            for core in cores:
-                edges.append((core, offchip_core, {"cl": generic_test_link}))
-                edges.append((offchip_core, core, {"cl": generic_test_link}))
+    # calculate the maximum number of generic CommunicationLinks needed to 
+    max_channels_num = max(offchip_read_channels_num, offchip_write_channels_num, memTile_read_channels_num, memTile_write_channels_num)  # Aya: this should be the largest of the above channels
 
-            for core_1 in cores:
+    for i in range(max_channels_num):  # Aya: a parametrizable number of channels
+        generic_test_link = CommunicationLink(
+            "Any" + str(i), "Any" + str(i), axi_bandwidth, unit_energy_cost
+        )            
+        # the purpose of these flags is to ensure that we increment the corresponding channels counter only once after adding any number of edges to/from the corresponding core
+        offchip_read_flag = False
+        offchip_write_flag = False
+        memTile_read_flag = False
+        memTile_write_flag = False
+
+        # what are all possible connections for connecting any to any?
+        # (1) add a read and write edge from/to every core (including all memTiles) and the offchip core
+        for core in cores:
+            if core.core_type == 1:
+                if offchip_read_count < offchip_read_channels_num and memTile_write_count < memTile_write_channels_num:
+                    edges.append((core, offchip_core, {"cl":  generic_test_link}))  # in each iteration of the outer loop, it acts as a 1 read channel of the offchip core and 1 write channel of every memTile
+                    offchip_read_flag = True
+                    memTile_write_flag = True
+            else:
+                if offchip_read_count < offchip_read_channels_num:
+                    edges.append((core, offchip_core, {"cl":  generic_test_link}))  # in each iteration of the outer loop, it acts as 1 read channel of the offchip core and 1 write channel of every compute core
+                    offchip_read_flag = True
+            
+        for core in cores:    
+            if core.core_type == 1:
+                if offchip_write_count < offchip_write_channels_num and memTile_read_count < memTile_read_channels_num:
+                    edges.append((offchip_core, core, {"cl":  generic_test_link}))  # in each iteration of the outer loop, it acts as 1 write channel of the offchip core and 1 read channel of every memTile
+                    offchip_write_flag = True
+                    memTile_read_flag = True
+            else:
+                if offchip_write_count < offchip_write_channels_num:
+                    edges.append((offchip_core, core, {"cl":  generic_test_link}))  # in each iteration of the outer loop, it acts as 1 write channel of the offchip core and 1 read channel of every compute core
+                    offchip_write_flag = True
+
+        # (2) add a read and write edge between every core and every other core (including all memTiles)
+        for core_1 in cores:
+            if core_1.core_type == 1:
                 for core_2 in cores:
-                    if core_1 == core_2:
+                    if core_1 == core_2:  # no edges between a core and itself
                         continue
-                    edges.append((core_1, core_2, {"cl": generic_test_link}))   
-                    #edges.append((core_2, core_1, {"cl": generic_test_link}))  
-
+                    if core_2.core_type == 1:
+                        if memTile_read_count < memTile_read_channels_num and memTile_write_count < memTile_write_channels_num:
+                            edges.append((core_1, core_2, {"cl": generic_test_link})) # in each iteration of the outer loop, it acts as 1 read of every memTile and 1 write channel of every other memTile
+                            memTile_read_flag = True
+                            memTile_write_flag = True
+                    else:
+                        if memTile_write_count < memTile_write_channels_num:
+                            edges.append((core_1, core_2, {"cl": generic_test_link})) # in each iteration of the outer loop, it acts as 1 write channel of each memTile and 1 read channel of each compute core
+                            memTile_write_flag = True
+            else:
+                for core_2 in cores:
+                    if core_1 == core_2: # no edges between a core and itself
+                        continue
+                    if core_2.core_type == 1:
+                        if memTile_read_count < memTile_read_channels_num:
+                            edges.append((core_1, core_2, {"cl": generic_test_link})) # in each iteration of the outer loop, it acts as 1 read channel of each memTile and 1 write channel of each compute core
+                            memTile_read_flag = True
+                    else:
+                        edges.append((core_1, core_2, {"cl": generic_test_link})) # in each iteration of the outer loop, it acts as 1 read channel of every compute core and 1 write channel of every other compute core
+        # increment the counters corresponding to the true flags
+        if offchip_read_flag:
+            offchip_read_count += 1
+        if offchip_write_flag:
+            offchip_write_count += 1 
+        if memTile_read_flag:
+            memTile_read_count += 1
+        if memTile_write_flag:
+            memTile_write_count += 1
+    ########### End of the logic for building the AXI4-Stream network
+            
     # Build the graph using the constructed list of edges
     single_digraph = DiGraph(edges)
     multi_digraph = MultiDiGraph(edges)

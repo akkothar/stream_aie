@@ -237,10 +237,6 @@ class CommunicationManager:
         
         offchip_core = self.accelerator.get_core(self.accelerator.offchip_core_id)
 
-        # cores_pairs = [(producer_core, consumer_core) for producer_core, consumer_core in itertools.product(
-        #     self.accelerator.cores.nodes(), self.accelerator.cores.nodes()
-        # ) if producer_core == offchip_core or consumer_core == offchip_core]
-        
         core = self.accelerator.get_core(core_id)
         if "O" in too_large_operands:
             links_to_offchip = self.get_links_for_pair(core, offchip_core) #set(self.get_links_for_pair(core, offchip_core))

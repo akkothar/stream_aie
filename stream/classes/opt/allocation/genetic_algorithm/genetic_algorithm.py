@@ -125,6 +125,11 @@ class GeneticAlgorithm:
         )
         # stats.register("saved", self.save_population)
 
+        # Aya: added the following to plot the design space
+        self.statistics_evaluator.append_generation(self.pop)
+        self.statistics_evaluator.plot_evolution()
+        self.statistics_evaluator.plot_population(self.pop)
+
         logbook = algorithms.eaMuPlusLambda(
             self.pop,
             self.toolbox,

@@ -110,9 +110,8 @@ class StandardFitnessEvaluator(FitnessEvaluator):
             #print("\n", file=printing_file)
         for (from_offchip_flag, is_too_large_operands, receiver_core_id, transfer_complete_cycle, tensor_operand, tensor, CN) in self.dbg_tensors_transfer_details:
             if not is_too_large_operands:
-                if transfer_complete_cycle == -1: 
-                    print("\tCore {} already has the tensor {} in its L1 memory for {}.".format(receiver_core_id, tensor, CN), file=printing_file)
-                else:
+                    #print("\tCore {} already has the tensor {} in its L1 memory for {}.".format(receiver_core_id, tensor, CN), file=printing_file)
+                if transfer_complete_cycle != -1: 
                     if(from_offchip_flag == False):  
                         if(tensor.layer_operand == "I" or tensor.layer_operand == "W"):
                             print("NORMAL Transfer of {} to {} on Core {} is completed at Cycle {}. It is consumed by {} and is NOT coming from the offchip core".format(tensor, CN, receiver_core_id, transfer_complete_cycle, tensor.origin), file=printing_file)
@@ -132,9 +131,9 @@ class StandardFitnessEvaluator(FitnessEvaluator):
                     else:
                         actual_tensor_operand = "O"
 
-                if transfer_complete_cycle == -1: 
-                    print("\tCore {} already has the tensor {} in its L1 memory for {}.".format(receiver_core_id, actual_tensor_operand, CN), file=printing_file)
-                else:
+                # if transfer_complete_cycle == -1: 
+                    # print("\tCore {} already has the tensor {} in its L1 memory for {}.".format(receiver_core_id, actual_tensor_operand, CN), file=printing_file)
+                if transfer_complete_cycle != -1:
                     if(from_offchip_flag == False):  
                         print("BLOCK Transfer of {} to {} on Core {} is completed at Cycle {}. It is NOT coming from the offchip core".format(actual_tensor_operand, CN, receiver_core_id, transfer_complete_cycle), file=printing_file)
                     else:

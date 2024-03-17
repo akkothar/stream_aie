@@ -106,8 +106,8 @@ def get_memory_hierarchy(multiplier_array):
     # )
 
 
-    from zigzag.visualization.graph.memory_hierarchy import visualize_memory_hierarchy_graph
-    visualize_memory_hierarchy_graph(memory_hierarchy_graph)
+    # from zigzag.visualization.graph.memory_hierarchy import visualize_memory_hierarchy_graph
+    # visualize_memory_hierarchy_graph(memory_hierarchy_graph)
     return memory_hierarchy_graph
 
 
@@ -144,7 +144,7 @@ def get_core(id):
     operational_array = get_operational_array()
     memory_hierarchy = get_memory_hierarchy(operational_array)
     dataflows = get_dataflows()
-    core = Core(id, operational_array, memory_hierarchy, dataflows)
+    core = Core(id, operational_array, memory_hierarchy, 0, dataflows)
     return core
 
 

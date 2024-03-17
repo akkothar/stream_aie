@@ -464,7 +464,8 @@ def schedule_graph(
         )
 
         # Aya
-        dbg_tensors_transfer_details.append((True, True, core_id, timestep + best_candidate.get_runtime(),  best_candidate.too_large_operands,  best_candidate.too_large_operands, best_candidate))
+        if(len(best_candidate.too_large_operands) > 0):
+            dbg_tensors_transfer_details.append((True, True, core_id, timestep + best_candidate.get_runtime(),  best_candidate.too_large_operands,  best_candidate.too_large_operands, best_candidate))
 
         ## Step 4
         # Make space for the output tensor of this computation node and spawn it when evictions are complete

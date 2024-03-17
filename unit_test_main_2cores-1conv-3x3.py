@@ -98,6 +98,7 @@ mainstage = MainStage(
     operands_to_prefetch=[],
     split_W_percentage=split_W_percentage,
     results_path=results_path, # Aya: added this to define the path to the results
+    memTile_flag = True,  # Aya: added this to make it easy to add or remove memTiles
 )
 
 # Launch the MainStage

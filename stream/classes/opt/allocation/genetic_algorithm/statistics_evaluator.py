@@ -99,6 +99,8 @@ class StatisticsEvaluator:
             plt.ylabel(self.fitness_evaluator.metrics[2])
             # plt.legend(loc='upper right')
             plt.show()
+        plt.savefig('new_design_space.png')
+
 
     def plot_population(self, pop):
         # funcion only works if more than two fitness evaluator metrics are used
@@ -153,35 +155,38 @@ class StatisticsEvaluator:
             + "]"
         )
 
-        if len(self.fitness_evaluator.metrics) == 2:
-            plt.scatter(x, y, c="blue")
-            plt.title("Pareto front of produced solutions")
-            plt.grid()
-            plt.xlabel(self.fitness_evaluator.metrics[0] + "\n" + min_max_x)
-            if len(self.fitness_evaluator.metrics) == 1:
-                plt.ylabel(self.fitness_evaluator.metrics[0] + "\n" + min_max_y)
-            else:
-                plt.ylabel(self.fitness_evaluator.metrics[1] + "\n" + min_max_y)
-            plt.tight_layout()
-            plt.show()
 
+        #if len(self.fitness_evaluator.metrics) == 2:
+        plt.scatter(x, y, c="blue")
+        plt.title("Pareto front of produced solutions")
+        plt.grid()
+        plt.xlabel(self.fitness_evaluator.metrics[0] + "\n" + min_max_x)
+        if len(self.fitness_evaluator.metrics) == 1:
+            plt.ylabel(self.fitness_evaluator.metrics[0] + "\n" + min_max_y)
         else:
-            from mpl_toolkits.mplot3d import Axes3D
-            import matplotlib.pyplot as plt
-            import numpy as np
+            plt.ylabel(self.fitness_evaluator.metrics[1] + "\n" + min_max_y)
+        plt.tight_layout()
+        plt.show()
 
-            plt.clf()
-            fig = plt.figure()
-            ax = fig.add_subplot(111, projection="3d")
-            ax.scatter(y, x, z, c=z)
-            ax.set_xlabel(self.fitness_evaluator.metrics[1])
-            ax.set_ylabel(self.fitness_evaluator.metrics[0])
-            ax.set_zlabel(self.fitness_evaluator.metrics[2])
-            ax.locator_params(axis="x", nbins=6)
-            ax.locator_params(axis="y", nbins=6)
-            ax.view_init(15, 45)
-            path = "outputs/paretofront_middle"
-            plt.savefig(path)
+        plt.savefig('POP_design_space.png')
+
+        # else:
+        #     from mpl_toolkits.mplot3d import Axes3D
+        #     import matplotlib.pyplot as plt
+        #     import numpy as np
+
+        #     plt.clf()
+        #     fig = plt.figure()
+        #     ax = fig.add_subplot(111, projection="3d")
+        #     ax.scatter(y, x, z, c=z)
+        #     ax.set_xlabel(self.fitness_evaluator.metrics[1])
+        #     ax.set_ylabel(self.fitness_evaluator.metrics[0])
+        #     ax.set_zlabel(self.fitness_evaluator.metrics[2])
+        #     ax.locator_params(axis="x", nbins=6)
+        #     ax.locator_params(axis="y", nbins=6)
+        #     ax.view_init(15, 45)
+        #     path = "outputs/paretofront_middle"
+        #     plt.savefig(path)
             # plt.show()
 
     def print_population(self, pop):

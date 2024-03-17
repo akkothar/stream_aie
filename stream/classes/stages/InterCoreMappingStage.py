@@ -21,9 +21,6 @@ from zigzag.visualization.results.print_mapping import (
 # Aya:
 import matplotlib.pyplot as plt
 import networkx as nx
-# Aya:
-import matplotlib.pyplot as plt
-import networkx as nx
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +73,7 @@ class InterCoreMappingStage(Stage):
         
         # Aya
         self.aya_dfg = kwargs["aya_dfg"]
+        self.memTile_flag = kwargs["memTile_flag"]
 
         #self.original_workload = kwargs["original_workload"]
         self.scheduling_order = kwargs.get("scheduling_order", None)
@@ -174,7 +172,6 @@ class InterCoreMappingStage(Stage):
         # print(nx.dfs_successors(self.workload))
         # print("****************************************")
 
-
         if self.individual_length == 0:
             logger.info(f"Evaluating fixed layer-core allocation.")
             core_allocations = []
@@ -209,6 +206,11 @@ class InterCoreMappingStage(Stage):
             logger.info(
                 f"Running Inter-Core Allocation Optimization with Genetic Algorithm."
             )
+
+            # Aya: added the following to plot a graph of the explored design space
+            explored_energies = []
+            explored_latencies = []
+
             # Initialize the genetic algorithm
             self.genetic_algorithm = GeneticAlgorithm(
                 self.fitness_evaluator,
@@ -224,10 +226,17 @@ class InterCoreMappingStage(Stage):
             print(hof)
             if self.plot_hof:
                 for i, core_allocations in enumerate(hof):
-                    results = self.fitness_evaluator.get_fitness(
+                    # results = self.fitness_evaluator.get_fitness(
+                    #     core_allocations, return_scme=True
+                    # )
+                    #scme = results[-1]
+                    (energy, latency, scme) = self.fitness_evaluator.get_fitness(
                         core_allocations, return_scme=True
                     )
-                    scme = results[-1]
+                    explored_energies.append(energy)
+                    explored_latencies.append(latency)
+
+
                     save_last_core_allocation = core_allocations  # Aya added this
 
                     """
@@ -236,6 +245,11 @@ class InterCoreMappingStage(Stage):
                                        fig_path=f"outputs/schedule_plot{self.fig_path}{i}.png")
                     scme.plot_memory_usage(fig_path=f"outputs/memory_usage_plot{self.fig_path}{i}.png")
                     """
+                
+                # plt.scatter(explored_latencies, explored_energies, c ="blue")
+                # plt.show()
+                # plt.savefig('design_space.png')
+                    
                 # Aya: these functions print to files the cycles at the beginning of tensor transfers between cores to help us understand the final schedule
                 # I'm printing it after the loop to use the final scme and the final transfer cycles
                 with open(cns_start_end_cycles_printing_file, "a") as ff:
@@ -290,7 +304,7 @@ class InterCoreMappingStage(Stage):
                             # print("Number of elements unrolled at each memory level is {}".format(cme.mapping.data_elem_per_level_unrolled), file=ff) # Zigzag's summary of tile sizes
                             # print("Total Number of bits unrolled at each memory level is {}\n".format(cme.mapping.data_bit_per_level_unrolled), file=ff) # Zigzag's summary of tile sizes
                             print("Spatial mapping field of the CME: {}".format(cme.spatial_mapping), file=ff)
-                            aya_print_mapping(cme, core, ff)  # prints the table detailing the mapping
+                            aya_print_mapping(cme, core, ff, self.memTile_flag)  # prints the table detailing the mapping
                             print("############ End of the mapping results of one layer ############", file=ff)
             yield scme, None
         logger.info(f"Finished InterCoreMappingStage.")

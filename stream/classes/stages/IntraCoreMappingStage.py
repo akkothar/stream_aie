@@ -4,6 +4,8 @@ import pickle
 import networkx as nx
 import logging
 
+import numpy as np
+
 from zigzag.classes.cost_model.cost_model import CostModelEvaluation
 from zigzag.classes.hardware.architecture.core import Core
 from zigzag.classes.stages import *
@@ -39,6 +41,8 @@ class IntraCoreMappingStage(Stage):
         self.loma_lpf_limit = loma_lpf_limit
         self.loma_show_progress_bar = kwargs.get("loma_show_progress_bar", False)
         self.node_hw_performances_path = kwargs.get("node_hw_performances_path", None)
+
+        self.memTile_flag = kwargs["memTile_flag"]
 
         # Extract all unique nodes that will have to be evaluated
         self.unique_nodes = []
@@ -436,6 +440,51 @@ class IntraCoreMappingStage(Stage):
         )
         updated_accelerator = pickle_deepcopy(self.accelerator)
         core: Core = updated_accelerator.get_core(core_id)
+
+    ################# Aya: towards adding the memTile to the memory hierarchy
+        if(self.memTile_flag):
+            # Aya: identify the memTile core in the column of the core under study
+            cores_without_offchip = []
+            for one_core in self.accelerator.cores:
+                if one_core.id is not self.accelerator.offchip_core_id:
+                    cores_without_offchip.append(one_core)
+
+            accelerator_cores_array = np.asarray(cores_without_offchip).reshape((self.accelerator.nb_rows, self.accelerator.nb_cols), order="C")
+            for col in accelerator_cores_array.T:
+                if core in col:
+                    for one_core in col:
+                        if(one_core.core_type == 1):
+                            mem_tile_core = one_core
+
+            # old way of identifying memTile assumes that we have only a single memTile
+            # mem_tile_core = pickle_deepcopy(
+            #     self.accelerator.get_core(7)  # Aya: for now hardcoding the id to always assuming it is 7, TODO: pass it as a parameter
+            # )
+
+            mem_tile_memory_levels = mem_tile_core.memory_hierarchy.mem_level_list
+            mem_tile_memory_level = pickle_deepcopy(mem_tile_memory_levels[0])
+            mem_tile_memory_instance = mem_tile_memory_level.memory_instance
+            mem_tile_memory_operands = too_large_operands
+            # Recreate the port allocation
+            mem_tile_port_alloc_raw = []
+            for memory_operand in mem_tile_memory_operands:
+                operand_idx_in_mem_tile_level = mem_tile_memory_level.operands.index(
+                    memory_operand
+                )
+                mem_tile_port_alloc_raw.append(
+                    mem_tile_memory_level.port_alloc_raw[operand_idx_in_mem_tile_level]
+                )
+            mem_tile_port_alloc_raw = tuple(mem_tile_port_alloc_raw)
+            mem_tile_served_dimensions = "all"
+
+            core.memory_hierarchy.add_memory(
+                mem_tile_memory_instance,
+                mem_tile_memory_operands,
+                mem_tile_port_alloc_raw,
+                mem_tile_served_dimensions,
+            )
+    ###############################################################
+
         offchip_core = pickle_deepcopy(
             self.accelerator.get_core(self.accelerator.offchip_core_id)
         )

@@ -4,7 +4,6 @@ from zigzag.classes.hardware.architecture.operational_array import MultiplierArr
 from zigzag.classes.hardware.architecture.memory_instance import MemoryInstance
 from zigzag.classes.hardware.architecture.core import Core
 
-
 def get_memory_hierarchy(multiplier_array, offchip_bw):
     """Memory hierarchy variables"""
     """ size=#bit, bw=(read bw, write bw), cost=(read word energy, write work energy) """
@@ -70,7 +69,7 @@ def get_shim_dma_core(id, offchip_bw):
     """
     operational_array = get_operational_array()
     memory_hierarchy = get_memory_hierarchy(operational_array, offchip_bw)
-    core = Core(id, operational_array, memory_hierarchy)
+    core = Core(id, operational_array, memory_hierarchy, 2)
     return core
 
 
