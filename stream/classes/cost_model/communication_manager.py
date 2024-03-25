@@ -42,9 +42,12 @@ class CommunicationLinkEvent:
         - a list of tensors relevant for the event:
             * the tensor being transferred
             * the tensor(s) for which we are blocking
+        Aya's added fields
+        - sender core making the transfer over the link
+        - receiver core receiving the transfer over the link
     """
 
-    def __init__(self, type, start, end, tensors, energy, activity=100) -> None:
+    def __init__(self, type, start, end, tensors, energy, sender, receiver, activity=100) -> None:
         self.type = type
         self.start = start
         self.end = end
@@ -53,6 +56,9 @@ class CommunicationLinkEvent:
         self.energy = energy
         self.activity = activity
 
+        # Aya
+        self.sender = sender
+        self.receiver = receiver
 
     def __str__(self) -> str:
         return f"CommunicationLinkEvent(type={self.type}, start={self.start}, end={self.end}, tensors={self.tensors}, energy={self.energy:.2e})"
@@ -67,6 +73,13 @@ class CommunicationLinkEvent:
         origins = [tensor.origin for tensor in self.tensors]
         assert all([origin == origins[0] for origin in origins])
         return origins[0]
+    
+    # Aya
+    def get_sender(self):
+        return self.sender
+    
+    def get_receiver(self):
+        return self.receiver
 
 
 class CommunicationManager:
@@ -198,6 +211,8 @@ class CommunicationManager:
                 end=end_timestep,
                 tensors=[tensor],
                 energy=duration * link.unit_energy_cost,
+                sender=sender,
+                receiver=receiver,
             )
             for link in links
         ]
@@ -222,7 +237,7 @@ class CommunicationManager:
         return link_energy_cost, memory_energy_cost
 
     def block_offchip_links(
-        self, too_large_operands, core_id, start_timestep, duration, cn, dbg_file
+        self, too_large_operands, core_id, start_timestep, duration, cn
     ) -> int:
         """Block the communication link between 'core' and the offchip core starting at timestep 'start_timestep' for duration 'duration'.
 
@@ -240,21 +255,15 @@ class CommunicationManager:
         core = self.accelerator.get_core(core_id)
         if "O" in too_large_operands:
             links_to_offchip = self.get_links_for_pair(core, offchip_core) #set(self.get_links_for_pair(core, offchip_core))
-            # Aya
-            print("For {} with O operand on Core {}, here is a list of the links connecting to the offchip core: {}".format(cn, core_id, links_to_offchip), file=dbg_file)
             req_bw_to_offchip = cn.offchip_bw.wr_in_by_low
             for link in links_to_offchip:
                 links_to_block[link] = links_to_block.get(link, 0) + req_bw_to_offchip
-            print("\t And here is a list of the links to block: {}".format(links_to_block), file=dbg_file)
             
         if [op for op in too_large_operands if op != "O"]:
             links_from_offchip = self.get_links_for_pair(offchip_core, core) #set(self.get_links_for_pair(offchip_core, core))
-            # Aya
-            print("For {} with I or W operands on Core {}, here is a list of the links connecting to the offchip core: {}".format(cn, core_id, links_from_offchip), file=dbg_file)
             req_bw_from_offchip = cn.offchip_bw.rd_out_to_low
             for link in links_from_offchip:
                 links_to_block[link] = links_to_block.get(link, 0) + req_bw_from_offchip
-            print("\t And here is a list of the links to block: {}".format(links_to_block), file=dbg_file)
         if not too_large_operands:
             return start_timestep
         
@@ -265,25 +274,22 @@ class CommunicationManager:
                 k for k, v in cn.memory_operand_links.items() if v == mem_op
             )
             tensors.append(cn.operand_tensors[layer_op])
-        # print("===Printing the parameters of get_links_idle_window inside block_offchip_links===")
-        # print("links_to_block = {}, start_timestep = {}, duration = {}, tensors = {}".format(links_to_block, start_timestep, duration, tensors))
-        # print("===========================================================")
         # Get idle window of the involved links
         # Arne: Added duration for blocking to avoid it only blocking the CN computation partially
-        block_start, new_duration, used_link = self.get_links_idle_window(
-            links_to_block, start_timestep, tensors, duration   
+        block_start, new_duration, used_link, all_links_transfer_start_end = self.get_links_idle_window(
+            links_to_block, start_timestep, tensors, offchip_core, core, duration   
         )
         
         for link, req_bw in links_to_block.items():
             req_bw = ceil(req_bw)
             #link.block(block_start, new_duration, tensors, activity=req_bw)  # Aya: changed it to the duration returned from the get_links_idle_window function
         # Aya: replaced the above code with the following to block only a single link to the offchip core
-        used_link.block(block_start, new_duration, tensors, activity=req_bw)  # Aya: changed it to the duration returned from the get_links_idle_window function
+        used_link.block(block_start, new_duration, tensors, offchip_core, core, activity=req_bw)  # Aya: changed it to the duration returned from the get_links_idle_window function
         return block_start
 
 
     def get_links_idle_window(
-        self, links: list, best_case_start: int, tensors: list, duration: int=None,
+        self, links: list, best_case_start: int, tensors: list, sender: Core, receiver: Core, duration: int=None,
     ) -> int:
         """Return the timestep at which tensor can be transfered across the links.
         Both links must have an idle window large enough for the transfer.
@@ -309,7 +315,7 @@ class CommunicationManager:
                 duration = max([ceil(tensors[0].size / link.bandwidth) for link in path])
                 for i, (link, req_bw) in enumerate(path.items()):
                     req_bw = min(req_bw, link.bandwidth)  # ceil the bw
-                    windows = link.get_idle_window(req_bw, duration, best_case_start, tensors)
+                    windows = link.get_idle_window(req_bw, duration, best_case_start, tensors, sender, receiver)
                     if i == 0:
                         idle_intersections = windows
                     else:
@@ -330,7 +336,7 @@ class CommunicationManager:
                 link = path
                 req_bw = path.bandwidth
                 req_bw = min(req_bw, link.bandwidth)  # ceil the bw
-                windows = link.get_idle_window(req_bw, duration, best_case_start, tensors)
+                windows = link.get_idle_window(req_bw, duration, best_case_start, tensors, sender, receiver)
                 idle_intersections = windows
                 # Aya: added this to define a rule for deciding which 
                 if idle_intersections[0][0] < best_idle_intersections[0][0]:
@@ -342,7 +348,7 @@ class CommunicationManager:
         if isinstance(best_link, dict):
             best_link = list(best_link.keys())
 
-        return best_idle_intersections[0][0], best_duration, best_link
+        return best_idle_intersections[0][0], best_duration, best_link, best_idle_intersections
 
         # Aya: The following commented code was there before adding support for multiple parallel links between cores
         # idle_intersections = []

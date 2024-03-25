@@ -125,6 +125,7 @@ class InterCoreMappingStage(Stage):
         self.set_hw_performance_non_flexible_nodes()
 
         # Initialize the fitness evaluator of different core allocations
+        
         self.fitness_evaluator = StandardFitnessEvaluator(
             self.workload,
             self.accelerator,
@@ -149,6 +150,8 @@ class InterCoreMappingStage(Stage):
 
     # Aya: added this function to print information about the depth of object fifos by checking the number of predecessors for each CN in the workload graph
     def print_cns_preds(self, printing_file):
+        if self.aya_dfg.__len__() == 0:
+            print("There are no dependencies between the computation nodes!\n", file=printing_file)
         for node in self.aya_dfg:
             print("Predecessors of Node {} are: {}\n".format(node.id, list((self.aya_dfg.predecessors(node)))), file=printing_file)
         #print(nx.dfs_successors(self.workload), file=printing_file)
@@ -162,11 +165,11 @@ class InterCoreMappingStage(Stage):
         logger.info(f"Start InterCoreMappingStage.")
 
         # Aya: paths to files for exporting useful information about the scheduling and the mapping outputs
-        cns_start_end_cycles_printing_file = self.results_path + "/check_cns_start_end_cycles.txt"
-        tensors_transfer_end_cycles = self.results_path + "/check_tensors_end_transfer_cycles.txt"
-        prefetch_weights_printing_file = self.results_path + "/check_weights_prefetch_transfer_cycles.txt"
-        actual_links_printing_file = self.results_path + "/check_actual_cores_links.txt"
-        mapping_output_printing_file = self.results_path + "/mapping_output.txt"
+        cns_start_end_cycles_printing_file = self.results_path+"/check_cns_start_end_cycles.txt"
+        tensors_transfer_end_cycles = self.results_path+"/check_tensors_end_transfer_cycles.txt"
+        prefetch_weights_printing_file = self.results_path+"/check_weights_prefetch_transfer_cycles.txt"
+        actual_links_printing_file = self.results_path+"/check_actual_cores_links.txt"
+        mapping_output_printing_file = self.results_path+"/mapping_output.txt"
 
         # print("****************************************")
         # print(nx.dfs_successors(self.workload))
@@ -198,7 +201,7 @@ class InterCoreMappingStage(Stage):
             with open(actual_links_printing_file, "a") as ff:
                 self.fitness_evaluator.print_to_file_used_links_between_cores(ff)
 
-            with open(self.results_path + "/testing_cns_preds.txt", "a") as ff:
+            with open(self.results_path+"/cns_preds_objectFifoDepth.txt", "a") as ff:
                 self.print_cns_preds(ff)
 
             yield scme, None
@@ -264,7 +267,7 @@ class InterCoreMappingStage(Stage):
                 with open(actual_links_printing_file, "a") as ff:
                     self.fitness_evaluator.print_to_file_used_links_between_cores(ff)
 
-                with open(self.results_path + "/testing_cns_preds.txt", "a") as ff:
+                with open(self.results_path+"/cns_preds_objectFifoDepth.txt", "a") as ff:
                     self.print_cns_preds(ff)
 
                 ############## Aya: added the following code to extract the final cmes after the genetic algorithm and fitness_evaluator

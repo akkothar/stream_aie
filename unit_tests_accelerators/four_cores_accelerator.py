@@ -16,13 +16,14 @@ from stream.classes.hardware.architecture.accelerator import Accelerator
 cores = [one_aie_core(0), 
          one_aie_core(1), 
          one_aie_core(2),
+         one_aie_core(3),
          mem_tile(id=4),] 
 offchip_core_id = 10
 aya_everything_to_dram_bw = 64 * 8
 
 offchip_core = shim_core(id=offchip_core_id, offchip_bw=aya_everything_to_dram_bw) # basically DRAM
 
-nb_rows= 4 #1
+nb_rows= 5 #1
 nb_cols= 1 #1 #2
 
 parallel_links_flag = True # Aya: added this to selectively choose if the exploration includes multiple parallel links between a pair of cores or just the shortest links..
@@ -36,10 +37,10 @@ cores_graph = get_2d_mesh(
     axi_bandwidth=aya_everything_to_dram_bw,
     pooling_core=[],
     unit_energy_cost=0,
-    offchip_read_channels_num=1,#3, 
-    offchip_write_channels_num=1,#3, 
-    memTile_read_channels_num=1,#6,
-    memTile_write_channels_num=1,#4,
+    offchip_read_channels_num=2,#3, 
+    offchip_write_channels_num=2,#3, 
+    memTile_read_channels_num=6,#6,
+    memTile_write_channels_num=4,#4,
     offchip_core=offchip_core,
 )  # , offchip_bandwidth=32)
 

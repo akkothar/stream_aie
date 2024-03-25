@@ -4,6 +4,10 @@ import numpy as np
 from stream.classes.workload.tensor import Tensor
 from stream.classes.cost_model.communication_manager import CommunicationLinkEvent
 
+# Aya
+from zigzag.classes.hardware.architecture.core import Core
+
+
 
 class BusyTimeViolationException(Exception):
     pass
@@ -33,6 +37,7 @@ class CommunicationLink:
         self.active_ts = np.array([0, float("inf")])
         self.active_deltas = np.array([0, 0])
         self.tensors = {}
+
 
     def __str__(self) -> str:
         return f"CommunicationLink({self.sender}, {self.receiver}, bw={self.bandwidth})"
@@ -92,6 +97,8 @@ class CommunicationLink:
         start: int,
         duration: int,
         tensors: list,
+        sender: Core, # Aya
+        receiver: Core, 
         activity: int = 100,
     ):
         """Block this communication link from start timestep for a given duration.
@@ -109,7 +116,10 @@ class CommunicationLink:
             end=end,
             tensors=tensors,
             energy=tensors[0].origin.get_offchip_energy(),
+            sender=sender,
+            receiver=receiver,
             activity=activity,
+
         )
         # self.update_busy_periods(event)
         # self.update_idle_periods(event)
@@ -145,7 +155,7 @@ class CommunicationLink:
             self.tensors[tensor] = self.tensors.get(tensor, []) + [event]
         self.events.append(event)
 
-    def get_idle_window(self, activity, duration, earliest_t, tensors):
+    def get_idle_window(self, activity, duration, earliest_t, tensors, new_sender, new_receiver):
         """
         Get the earliest time window of duration 'duration' from 'earliest_t'
         with atleast 'activity' percent available.
@@ -163,28 +173,52 @@ class CommunicationLink:
                     earliest_t_valid = previous_event.start >= earliest_t
                     if duration_valid and earliest_t_valid:
                         valid_windows.append((previous_event.start, previous_event.end))
-        ## Check other possible periods given the activity
-        activities = np.cumsum(self.active_deltas)
-        earliest_t_index = np.searchsorted(self.active_ts, earliest_t, side="right")
-        relevant_ts = self.active_ts[earliest_t_index:]
-        updated_ts = relevant_ts.copy()
-        relevant_activities = activities[earliest_t_index:]
-        # Insert the earliest timestep and the activity at that timestep
-        updated_ts = np.insert(updated_ts, 0, earliest_t)
-        updated_activities = np.insert(relevant_activities, 0, activities[earliest_t_index - 1])
-        updated_activities = updated_activities + activity
-        idxs = np.argwhere(updated_activities > self.bandwidth)
-        idxs = [idx[0] for idx in idxs]
-        idxs.append(len(updated_ts) - 1)
-        start = earliest_t
-        for idx in idxs:
-            end = updated_ts[idx]
-            if end - start >= duration:
-                valid_windows.append((start, end))
-            try:
-                start = updated_ts[idx+1]
-            except:
-                break
+        
+        ################# Aya's edits to add support for the spatial separation of links
+        # Aya: loop over the events field and check the sender and receiver of each event (if it is overlapping)
+            # Aya: if the sender and receiver of all overlapping events are different from the current sender and receiver that we are trying to schedule a transfer for then start as soon as possible
+                # Aya: Else, follow the original flow
+        link_is_free = True  # it will be False if any of the sender and receiver of the overlapping events are the same as the current sender and receiver
+        for event in self.events:
+            # Previous event needs to be long enough
+            event_duration_valid = event.duration >= duration
+            # Previous event needs to have happened at late enough time
+            event_earliest_t_valid = event.start >= earliest_t
+            # skip if the event is not overlapping
+            if not event_duration_valid or not event_earliest_t_valid:
+                continue
+            # compare the sender and receiver of this event to the new ones that we are currently checking the idle_window for
+            if event.sender == new_sender or event.receiver == new_receiver:# or event.sender == new_receiver or event.receiver == new_sender:
+                link_is_free = False
+
+        if link_is_free:
+            # issue the transfer immediately
+            valid_windows.append((earliest_t, earliest_t + duration))
+        else:
+        ######################################################
+            ## Check other possible periods given the activity
+            activities = np.cumsum(self.active_deltas)
+            earliest_t_index = np.searchsorted(self.active_ts, earliest_t, side="right")
+            relevant_ts = self.active_ts[earliest_t_index:]
+            updated_ts = relevant_ts.copy()
+            relevant_activities = activities[earliest_t_index:]
+            # Insert the earliest timestep and the activity at that timestep
+            updated_ts = np.insert(updated_ts, 0, earliest_t)
+            updated_activities = np.insert(relevant_activities, 0, activities[earliest_t_index - 1])
+            updated_activities = updated_activities + activity
+            idxs = np.argwhere(updated_activities > self.bandwidth)
+            idxs = [idx[0] for idx in idxs]
+            idxs.append(len(updated_ts) - 1)
+            start = earliest_t
+            for idx in idxs:
+                end = updated_ts[idx]
+                if end - start >= duration:
+                    valid_windows.append((start, end))
+                try:
+                    start = updated_ts[idx+1]
+                except:
+                    break
+
         if not valid_windows:
             raise ValueError(f"There are no valid windows of activity {activity} and duration {duration} for {self}.")
         return valid_windows

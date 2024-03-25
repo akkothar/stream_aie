@@ -10,7 +10,6 @@ aya_core_to_core_bw = 256  # bandwidth of every link connecting two neighboring 
 aya_core_to_mem_tile_bw = 32 * 6
 #aya_everything_to_dram_bw = 64 * 8
 
-
 def have_shared_memory(a, b):
     """Returns True if core a and core b have a shared top level memory
 

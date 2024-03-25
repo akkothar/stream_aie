@@ -24,17 +24,16 @@ _logging_format = (
 _logging.basicConfig(level=_logging_level, format=_logging_format)
 
 #################################
-accelerator = "unit_tests_accelerators.two_cores_accelerator"
-workload_path = "unit_tests_workloads/conv2_1x1_C_512_K_256-1x1_C_256_K_256_workload.onnx"
-mapping_path = "unit_tests_accelerators.two_cores_mapping"
+accelerator = "unit_tests_accelerators.one_core_accelerator"
+workload_path = "unit_tests_workloads/conv1_1x1_C_256_K_64_workload.onnx"
+mapping_path = "unit_tests_accelerators.one_core_mapping"
 
 # Aya: added this to customize the path to the output
-example_name = "2cores-2conv-1x1-1x1"
+example_name = "1core-1conv-1x1"
 results_path = "unit_tests_results/" + example_name
 
-
 # Parameters determining the granularity of the layers splitting
-CN_define_mode = 1 # automatically split layers if too big to fit: # manually define outer CN size for all cores and all layers
+CN_define_mode = 4 # automatically split layers if too big to fit: # manually define outer CN size for all cores and all layers
 split_W_percentage = 0.5 # max percentage of capacity a single node's weights can be
 hint_loops = [("OY", "all")] # outer CN loops, with error in resnet18 plotting
 
@@ -100,6 +99,7 @@ mainstage = MainStage(
     operands_to_prefetch=[],
     split_W_percentage=split_W_percentage,
     results_path=results_path, # Aya: added this to define the path to the results
+    memTile_flag = True,  # Aya: added this to make it easy to add or remove memTiles
 )
 
 # Launch the MainStage

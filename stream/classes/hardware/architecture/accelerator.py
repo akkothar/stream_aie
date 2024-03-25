@@ -6,6 +6,7 @@ from stream.classes.cost_model.memory_manager import MemoryManager
 from stream.classes.cost_model.communication_manager import CommunicationManager
 from stream.classes.workload.tensor import Tensor
 
+import numpy as np
 
 class Accelerator:
     """
@@ -109,6 +110,7 @@ class Accelerator:
                 eviction_link_energy_cost,
                 eviction_memory_energy_cost,
                 came_from_offchip,
+                use_memTile_flag_status,
             ) = self.transfer_tensor_to_core(
                 tensor,
                 self.offchip_core_id,
@@ -236,6 +238,50 @@ class Accelerator:
         #print("The chosen link to transfer from {} to {} is {}".format(sender_core, receiving_core, chosen_link), file=printing_file)
         print("The link {} has active_ts = {}, active_deltas = {}, and tensors = {}".format(chosen_link, chosen_link.active_ts, chosen_link.active_deltas, chosen_link.tensors), file=printing_file)
 
+    
+     # Aya: use_memTile_flag_status can be one of three values: 
+                # 0: indicating that we have enough offchip channels 
+                # 1: indicating that the data is already present in the memTile and we should directly tansfer it from there
+                # 2: indicating that the data is not present in the memTile and there is only one available offchip channel, so do offchip -> memTile then memTile -> core 
+    def memTile_heuristic(self, memTile_core, use_heur_flag, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep):
+        if not use_heur_flag:
+            print("HII")
+            return 0
+        # Two things:
+        # (1) If the data is available inside the memTile, return memTile direct (because this is different from the offchip -> memTile -> Core)
+        memTile_top_instance = self.get_top_instance_of_core(
+            memTile_core.id, tensor_operand
+        )
+        
+        if self.memory_manager.contains(tensor, memTile_top_instance):
+            return 1
+
+        links = self.communication_manager.get_links_for_pair(  
+            sender_core, receiving_core
+        )
+        links_nested = []
+        for path in links:
+            if hasattr(path, '__iter__'):
+                links_nested.append({link: link.bandwidth for link in path})  # Aya: to support multiple parallel paths between a pair of cores where each path could be made of multiple links (i.e., if the pair of cores are not directly connected)
+            else:
+                links_nested.append({path: path.bandwidth})
+        # links = {link: link.bandwidth for link in links} # added for broadcasting
+        links = links_nested
+
+        transfer_start, transfer_duration, chosen_links, all_links_transfer_start_end = self.communication_manager.get_links_idle_window(
+            links, evictions_complete_timestep, [tensor,], sender_core, receiving_core
+        )
+
+        # loop over the start and the end of all of the links connecting the sender (offchip) and receiver, and count the ones of them that have s = evictions_complete_timestep (because this indicates that the link is idle and ready to transfer immediately)
+        idle_count = 0
+        for s, e in all_links_transfer_start_end:
+            if s == evictions_complete_timestep:
+                idle_count += 1
+        if idle_count < 2: # this means either there are no available links at all or there is only one link left
+            return 2 
+        return 0
+        # (2) If the data is not available inside the memTile, check if only one link of the offchip is idle and all the rest are busy, return 2; otherwise, return 0
+    
     def transfer_tensor_to_core(
         self,
         tensor: Tensor,
@@ -274,7 +320,7 @@ class Accelerator:
             receiving_core_id, tensor_operand
         )
         if self.memory_manager.contains(tensor, receiving_top_instance):
-            return -1, 0, 0, 0, 0, False
+            return -1, 0, 0, 0, 0, False, -1
         ################################# STEP 1 #################################
         # Get the top instance storing the tensor
         # If a sending core id is provided, we get the instance of that core.
@@ -333,8 +379,50 @@ class Accelerator:
         # TODO For now, we take the first one
         sender_core = sender_cores[0]
 
+        # Aya: If the data is coming from the offchip, I will run my heuristic to decide if I should go through the memTile or directly through the offchip
+        came_from_offchip = sender_core.id == self.offchip_core_id
+
+        ######### Aya: added the following heuristic to decide when the tool should explore the usage of memTile and when it should not
+                # I assume that the memTile will have enough space for the tensor. If not, then we need to add the above logic of "make_space_for" this tensor on the memTile
+        use_memTile_flag_status = 0
+        if came_from_offchip:
+            # retreieve the memTile in the same column as that of the receiver core and send it to the heuristic function
+            cores_without_offchip = []
+            for one_core in self.cores:
+                if one_core.id is not self.offchip_core_id:
+                    cores_without_offchip.append(one_core)
+            accelerator_cores_array = np.asarray(cores_without_offchip).reshape((self.nb_rows, self.nb_cols), order="C")
+            for col in accelerator_cores_array.T:
+                if receiving_core in col:
+                    for one_core in col:
+                        if(one_core.core_type == 1):
+                            memTile_core = one_core
+            
+            # Aya: use_memTile_flag_status can be one of three values: 
+                # 0: indicating that we have enough offchip channels 
+                # 1: indicating that the data is already present in the memTile and we should directly tansfer it from there
+                # 2: indicating that the data is not present in the memTile and there is only one available offchip channel, so do offchip -> memTile then memTile -> core 
+            use_memTile_flag_status = self.memTile_heuristic(memTile_core, True, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep)
+
+        # print("----------------------------")
+        # print("The value of came_from_offchip is {} and the value of use_memTile_flag_status is {}".format(came_from_offchip, use_memTile_flag_status))
+        # print("----------------------------")
+
+
+        if use_memTile_flag_status == 1: 
+            actual_sender_core = memTile_core
+            actual_receiving_core = receiving_core
+        elif use_memTile_flag_status == 2:   
+            # then we will return this information so that schedule_graph calls transfer_tensor_to_core again between the memTile and the original receving_core 
+            actual_sender_core = sender_core
+            actual_receiving_core = memTile_core
+        else:  # for anything else, just go with the original sender
+            actual_sender_core = sender_core
+            actual_receiving_core = receiving_core      
+        ############################################
+
         links = self.communication_manager.get_links_for_pair(  
-            sender_core, receiving_core
+            actual_sender_core, actual_receiving_core
         )
         links_nested = []
         for path in links:
@@ -344,27 +432,15 @@ class Accelerator:
                 links_nested.append({path: path.bandwidth})
         # links = {link: link.bandwidth for link in links} # added for broadcasting
         links = links_nested
-        # Aya: moved the following calculation of transfer_duration to happen inside get_links_idle_window and to be returned by it since this will differ if we are considenring multiple parallel links
-        # transfer_duration = max([ceil(tensor.size / link.bandwidth) for link in links])
-        # Aya: printing the link used in each tensor transfer by calling the following function
-        # with open(links_printing_file, "a") as ff:
-        #     print("\t----- AYAA: Inside transfer_to_core, printing details of the links ------", file=ff)
-        #     for one_link in links:
-        #         self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, one_link, ff)
-        #     print("\t_------------------------------_", file=ff)
 
-        transfer_start, transfer_duration, chosen_links = self.communication_manager.get_links_idle_window(
-            links, evictions_complete_timestep, [tensor,]
+        transfer_start, transfer_duration, chosen_links, all_links_transfer_start_end = self.communication_manager.get_links_idle_window(
+            links, evictions_complete_timestep, [tensor,], actual_sender_core, actual_receiving_core
         )
-
-        # Aya: printing the link used in each tensor transfer by calling the following function
-        # with open(links_printing_file, "a") as ff:
-        #     self.print_to_file_chosen_links_between_cores(sender_core, receiving_core, chosen_links, ff)
-
+    
         transfer_end = transfer_start + transfer_duration
         ################################# STEP 5 #################################
         # Spawn the tensor on the receiving core
-        self.spawn(tensor, receiving_core, tensor_operand, transfer_start, transfer_end)
+        self.spawn(tensor, actual_receiving_core, tensor_operand, transfer_start, transfer_end)
         ################################# STEP 6 #################################
         # Update the links involved in the communication and get the transfer energy cost
         (
@@ -372,8 +448,8 @@ class Accelerator:
             transfer_memory_energy_cost,
         ) = self.communication_manager.update_links(
             tensor,
-            sender_core.id,
-            receiving_core_id,
+            actual_sender_core.id,
+            actual_receiving_core.id,
             tensor_operand,
             transfer_start,
             transfer_duration,
@@ -382,26 +458,27 @@ class Accelerator:
         ################################# STEP 7 #################################
         # Remove the transfered tensor from the sender core (excluding DRAM)
         # if it is no longer needed.
-        if sender_core.id == self.offchip_core_id:
+        if actual_sender_core.id == self.offchip_core_id or actual_sender_core.core_type == 1:  # Aya: added the memTile to also not remove from it
             pass
         # Don't remove it from the producing core 
         else:
-            not_on_producing_core = sender_core.id != tensor.origin.core_allocation  # Aya: added for broadcast
+            not_on_producing_core = actual_sender_core.id != tensor.origin.core_allocation  
             if (storing_instance not in tensor.instance_priorities) or (
                 not_on_producing_core and tensor.instance_priorities[storing_instance] == 0
             ):
                 self.remove(
                     tensor,
-                    sender_core,
+                    actual_sender_core,
                     tensor.memory_operand,
                     transfer_end,
                     links_printing_file,
                     write_back_to_offchip=False,
                 )
-        ################################# STEP 8 #################################
-        # Give back flag that signals if the tensor came from offchip
-        came_from_offchip = sender_core.id == self.offchip_core_id
 
+         ################################# STEP 8 #################################
+        # Give back flag that signals if the tensor came from offchip
+        # Aya: moved it to happen above to run the heuristic of memTile to decide if I should go through the memTile or directly from the offchip
+       
         return (
             transfer_end,
             transfer_link_energy_cost,
@@ -409,6 +486,7 @@ class Accelerator:
             eviction_link_energy_cost,
             eviction_memory_energy_cost,
             came_from_offchip,
+            use_memTile_flag_status,
         )
 
     def get_memory_energy_cost_of_transfer(
@@ -452,10 +530,9 @@ class Accelerator:
     def block_offchip_links(
         self, too_large_operands, core_id, start_timestep, duration, cn
     ) -> int:
-        with open("offchip_links_blocking_dbg.txt", "a") as dbg_file:        
-            return self.communication_manager.block_offchip_links(
-                too_large_operands, core_id, start_timestep, duration, cn, dbg_file
-            )
+        return self.communication_manager.block_offchip_links(
+            too_large_operands, core_id, start_timestep, duration, cn
+        )
 
     def contains_tensor(self, tensor: Tensor, top_instance):
         if isinstance(top_instance, int):  # assume core id

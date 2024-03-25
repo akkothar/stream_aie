@@ -61,6 +61,8 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         #     self.constant_operand_occupation_factor,
         #     self.layer_stacks_mode,
         # )
+
+
         scme = StreamCostModelEvaluation(
             pickle_deepcopy(self.workload),
             pickle_deepcopy(self.accelerator),

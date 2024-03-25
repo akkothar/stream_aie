@@ -55,8 +55,9 @@ class StreamCostModelEvaluation:
         This assumes each node in the graph has an energy and runtime of the core to which they are allocated to.
         """
         # Aya
-        tensors_printing_file = self.results_path + "/tensors_details_for_objectFifos.txt"
-        links_printing_file = self.results_path + "/links_chosen_for_transfers_between_cores.txt"
+        tensors_printing_file = self.results_path+"/tensors_details_for_objectFifos.txt"
+        
+        links_printing_file = self.results_path+"/links_chosen_for_transfers_between_cores.txt"
         
         results = schedule_graph(
             self.workload,

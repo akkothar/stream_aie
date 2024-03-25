@@ -29,7 +29,8 @@ workload_path = "unit_tests_workloads/conv2_1x1_C_256_K_64-3x3_C_64_K_64_workloa
 mapping_path = "unit_tests_accelerators.three_cores_mapping"
 
 # Aya: added this to customize the path to the output
-results_path = "unit_tests_results/3cores-2conv-1x1-3x3"
+example_name = "3cores-2conv-1x1-3x3"
+results_path = "unit_tests_results/" + example_name
 
 
 # Parameters determining the granularity of the layers splitting
@@ -65,11 +66,11 @@ percent_shown = (100,)
 
 
 ################################PATHS################################
-node_hw_performances_path = f"unit_tests_results/3cores-2conv-1x1-3x3/{node_hw_cost_pkl_name}-CN_{CN_define_mode}.pickle"
-scme_path = f"unit_tests_results/3cores-2conv-1x1-3x3/{scme_pkl_name}-CN_{CN_define_mode}.pickle"
-timeline_fig_path_plotly = f"unit_tests_results/3cores-2conv-1x1-3x3/{experiment_id}-schedule-CN_{CN_define_mode}.html"
-timeline_fig_path_matplotlib = f"unit_tests_results/3cores-2conv-1x1-3x3/{experiment_id}-schedule-CN_{CN_define_mode}.png"
-memory_fig_path = f"unit_tests_results/3cores-2conv-1x1-3x3/{experiment_id}-memory-CN_{CN_define_mode}.png"
+node_hw_performances_path = f"unit_tests_results/{example_name}/{node_hw_cost_pkl_name}-CN_{CN_define_mode}.pickle"
+scme_path = f"unit_tests_results/{example_name}/{scme_pkl_name}-CN_{CN_define_mode}.pickle"
+timeline_fig_path_plotly = f"unit_tests_results/{example_name}/{experiment_id}-schedule-CN_{CN_define_mode}.html"
+timeline_fig_path_matplotlib = f"unit_tests_results/{example_name}/{experiment_id}-schedule-CN_{CN_define_mode}.png"
+memory_fig_path = f"unit_tests_results/{example_name}/{experiment_id}-memory-CN_{CN_define_mode}.png"
 #####################################################################
 
 mainstage = MainStage(

@@ -99,7 +99,7 @@ class StatisticsEvaluator:
             plt.ylabel(self.fitness_evaluator.metrics[2])
             # plt.legend(loc='upper right')
             plt.show()
-        plt.savefig('new_design_space.png')
+        #plt.savefig('new_design_space.png')
 
 
     def plot_population(self, pop):
@@ -168,7 +168,7 @@ class StatisticsEvaluator:
         plt.tight_layout()
         plt.show()
 
-        plt.savefig('POP_design_space.png')
+        plt.savefig('design_space.png')
 
         # else:
         #     from mpl_toolkits.mplot3d import Axes3D

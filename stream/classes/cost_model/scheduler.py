@@ -280,8 +280,8 @@ def schedule_graph(
     G: DiGraph,
     accelerator: Accelerator,
     #layer_stacks: list,
-    tensor_sizes_file,  # Aya: added this to print the number of tensors and tensor sizes needed by each CN
-    links_printing_file, # Aya
+    tensor_sizes_file: str,  # Aya: added this to print the number of tensors and tensor sizes needed by each CN
+    links_printing_file: str, # Aya
     cores_idle_from=None,
     operands_to_prefetch=[],
     scheduling_order=None,
@@ -429,6 +429,7 @@ def schedule_graph(
                 eviction_link_energy_cost,
                 eviction_memory_energy_cost,
                 came_from_offchip,
+                use_memTile_flag_status,
             ) = accelerator.transfer_tensor_to_core(
                 tensor,
                 core_id,
@@ -436,21 +437,47 @@ def schedule_graph(
                 tensors_this_candidate_needs,
                 links_printing_file, # Aya
             )
+
+            # Aya: depending on the value of use_memTile_flag_status, we might need to issue another transfer_tensor_to_core before taking the final transfer_complete_timestep
+            transfer_complete_timestep_2 = 0
+            transfer_link_energy_cost_2 = 0
+            transfer_memory_energy_cost_2 = 0
+            eviction_link_energy_cost_2 = 0
+            eviction_memory_energy_cost_2 = 0
+            if use_memTile_flag_status == 2:
+                 # Transfer the tensor
+                (
+                    transfer_complete_timestep_2,
+                    transfer_link_energy_cost_2,
+                    transfer_memory_energy_cost_2,
+                    eviction_link_energy_cost_2,
+                    eviction_memory_energy_cost_2,
+                    came_from_offchip_2,
+                    use_memTile_flag_status_2
+                ) = accelerator.transfer_tensor_to_core(
+                    tensor,
+                    core_id,  # it still takes the same receiver core_id because now we are transferring from the memTile to the original receiver
+                    tensor_operand,
+                    tensors_this_candidate_needs,
+                    links_printing_file, # Aya
+                )
+
+
             # Update the possible start time of this node
-            timestep = max(timestep, transfer_complete_timestep)
+            timestep = max(timestep, transfer_complete_timestep + transfer_complete_timestep_2)
 
             # Aya
-            dbg_tensors_transfer_details.append((came_from_offchip, False, core_id, transfer_complete_timestep, tensor_operand, tensor, best_candidate))
+            dbg_tensors_transfer_details.append((came_from_offchip, False, core_id, transfer_complete_timestep + transfer_complete_timestep_2, tensor_operand, tensor, best_candidate))
 
             # Add the energy costs to their respective trackers
             if came_from_offchip:
-                total_cn_offchip_link_energy += transfer_link_energy_cost
-                total_cn_offchip_memory_energy += transfer_memory_energy_cost
+                total_cn_offchip_link_energy += transfer_link_energy_cost + transfer_link_energy_cost_2
+                total_cn_offchip_memory_energy += transfer_memory_energy_cost + transfer_memory_energy_cost_2
             else:
-                total_core_to_core_link_energy += transfer_link_energy_cost
-                total_core_to_core_memory_energy += transfer_memory_energy_cost
-            total_eviction_to_offchip_link_energy += eviction_link_energy_cost
-            total_eviction_to_offchip_memory_energy += eviction_memory_energy_cost
+                total_core_to_core_link_energy += transfer_link_energy_cost + transfer_link_energy_cost_2
+                total_core_to_core_memory_energy += transfer_memory_energy_cost + transfer_memory_energy_cost_2
+            total_eviction_to_offchip_link_energy += eviction_link_energy_cost + eviction_link_energy_cost_2
+            total_eviction_to_offchip_memory_energy += eviction_memory_energy_cost + eviction_memory_energy_cost_2
 
         ## Step 3
         # Check if we had any operands that were too large to store in the core's memory, block the relevant off-chip link for the duration

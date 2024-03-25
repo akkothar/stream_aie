@@ -1,11 +1,11 @@
 from unit_tests_accelerators.aie_core1 import (
     get_core as one_aie_core,
 )
-from stream.inputs.aie.hardware.shim_dma_core import (
+from unit_tests_accelerators.shim_dma_core import (
     get_shim_dma_core as shim_core
 )
 
-from stream.inputs.aie.hardware.mem_tile import (
+from unit_tests_accelerators.mem_tile import (
     get_memTile_core as mem_tile,
 )
 
@@ -35,10 +35,10 @@ cores_graph = get_2d_mesh(
     axi_bandwidth=aya_everything_to_dram_bw,
     pooling_core=[],
     unit_energy_cost=0,
-    offchip_read_channels_num=2, 
-    offchip_write_channels_num=2, 
-    memTile_read_channels_num=6,
-    memTile_write_channels_num=4,
+    offchip_read_channels_num=1,#3, 
+    offchip_write_channels_num=1,#3, 
+    memTile_read_channels_num=1,#6,
+    memTile_write_channels_num=1,#4,
     offchip_core=offchip_core,
 )  # , offchip_bandwidth=32)
 

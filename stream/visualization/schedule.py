@@ -174,7 +174,17 @@ def plot_timeline_brokenaxes(
     hline_loc = core_and_transfer_link_ids[-1] - 0.5
     core_and_transfer_link_ids = core_and_transfer_link_ids[:-1]
     # Always define the last core as DRAM, not including DRAM in the core
-    y_labels = [f"Core {core_id}" for core_id in core_and_transfer_link_ids]
+    #y_labels = [f"Core {core_id}" for core_id in core_and_transfer_link_ids]
+    y_labels = []
+    for core_id in core_and_transfer_link_ids:
+        if accelerator.get_core(core_id).core_type == 1: # memTile
+            y_labels.append(f"MemTile {core_id}")
+        elif accelerator.get_core(core_id).core_type == 0: # compute
+            y_labels.append(f"Core {core_id}")
+        else:
+            y_labels.append(f"DRAM {core_id}")
+
+
 
     if plot_data_transfer:
         # First get all used and unique communication links
@@ -312,7 +322,10 @@ def plot_timeline_brokenaxes(
     bax.invert_yaxis()
     # replace all DRAM core (the core with the last core index) to 'DRAM'
     for i, label in enumerate(y_labels):
-        y_labels[i] = label.replace(f"Core({accelerator.offchip_core_id})", "DRAM")
+        if "MemTile" in label:
+            y_labels[i] = label.replace(f"MemTile({accelerator.offchip_core_id})", "DRAM")
+        else:
+            y_labels[i] = label.replace(f"Core({accelerator.offchip_core_id})", "DRAM")
     axs[0].set_yticks(range(len(y_labels)))
     axs[0].set_yticklabels(y_labels)
     plt.show(block=False)
