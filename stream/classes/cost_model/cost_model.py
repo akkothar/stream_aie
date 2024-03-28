@@ -1,7 +1,7 @@
 from networkx import DiGraph
 
 from stream.classes.hardware.architecture.accelerator import Accelerator
-from stream.classes.cost_model.scheduler import schedule_graph
+from stream.classes.cost_model.scheduler import schedule_graph, return_all_tensors_of_all_cns # Aya
 from stream.visualization.memory_usage import plot_memory_usage
 from stream.visualization.schedule import plot_timeline_brokenaxes
 
@@ -59,12 +59,22 @@ class StreamCostModelEvaluation:
         
         links_printing_file = self.results_path+"/links_chosen_for_transfers_between_cores.txt"
         
+        dbg_memTile_file = self.results_path+"/dbg_memTile.txt"
+
+        all_tensors = return_all_tensors_of_all_cns(
+            self.workload, 
+            scheduling_order=self.scheduling_order,
+        )
+
         results = schedule_graph(
             self.workload,
             self.accelerator,
             #self.layer_stacks,
+            #all_tensors,
+            [],
             tensors_printing_file,
             links_printing_file,
+            dbg_memTile_file,
             #candidate_selection=self.scheduler_candidate_selection,
             operands_to_prefetch=self.operands_to_prefetch,
             scheduling_order=self.scheduling_order,

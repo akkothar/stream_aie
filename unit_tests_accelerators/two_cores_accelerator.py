@@ -35,10 +35,11 @@ cores_graph = get_2d_mesh(
     axi_bandwidth=aya_everything_to_dram_bw,
     pooling_core=[],
     unit_energy_cost=0,
-    offchip_read_channels_num=1,#3, 
-    offchip_write_channels_num=1,#3, 
-    memTile_read_channels_num=1,#6,
-    memTile_write_channels_num=1,#4,
+    offchip_read_channels_num=2,#3, 
+    offchip_write_channels_num=2,#3, 
+    memTile_read_channels_num=6,#6,
+    memTile_write_channels_num=4,#4,
+    use_shared_mem_flag=True,
     offchip_core=offchip_core,
 )  # , offchip_bandwidth=32)
 

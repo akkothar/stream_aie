@@ -48,6 +48,7 @@ def get_2d_mesh(
     offchip_write_channels_num, # Aya
     memTile_read_channels_num, # Aya
     memTile_write_channels_num, # Aya
+    use_shared_mem_flag, #Aya: the goal of this flag is to easily enable or disable the direct connections between the neighboring cores
     pooling_core=None,
     simd_core=None,
     offchip_core=None,
@@ -86,18 +87,19 @@ def get_2d_mesh(
             # Aya
             if(sender.core_type == 1 or receiver.core_type == 1):  # skip memTile cores
                 continue
-            if not have_shared_memory(sender, receiver):
-                edges.append(
-                    (
-                        sender,
-                        receiver,
-                        {
-                            "cl": CommunicationLink(
-                                sender, receiver, aya_core_to_core_bw, unit_energy_cost
-                            )
-                        },
+            if use_shared_mem_flag:
+                if not have_shared_memory(sender, receiver):
+                    edges.append(
+                        (
+                            sender,
+                            receiver,
+                            {
+                                "cl": CommunicationLink(
+                                    sender, receiver, aya_core_to_core_bw, unit_energy_cost
+                                )
+                            },
+                        )
                     )
-                )
 
         # From right to left
         pairs = zip(reversed(row), reversed(row[:-1]))
@@ -106,19 +108,19 @@ def get_2d_mesh(
             # Aya
             if(sender.core_type == 1 or receiver.core_type == 1):  # skip memTile cores
                 continue
-           
-            if not have_shared_memory(sender, receiver):
-                edges.append(
-                    (
-                        sender,
-                        receiver,
-                        {
-                            "cl": CommunicationLink(
-                                sender, receiver, aya_core_to_core_bw, unit_energy_cost
-                            )
-                        },
+            if use_shared_mem_flag:
+                if not have_shared_memory(sender, receiver):
+                    edges.append(
+                        (
+                            sender,
+                            receiver,
+                            {
+                                "cl": CommunicationLink(
+                                    sender, receiver, aya_core_to_core_bw, unit_energy_cost
+                                )
+                            },
+                        )
                     )
-                )
            
     # Vertical edges
     for col in cores_array.T:
@@ -130,18 +132,19 @@ def get_2d_mesh(
             if(sender.core_type == 1 or receiver.core_type == 1):  # skip memTile cores
                 continue
            
-            if not have_shared_memory(sender, receiver):
-                edges.append(
-                    (
-                        sender,
-                        receiver,
-                        {
-                            "cl": CommunicationLink(
-                                sender, receiver, aya_core_to_core_bw, unit_energy_cost
-                            )
-                        },
+            if use_shared_mem_flag:
+                if not have_shared_memory(sender, receiver):
+                    edges.append(
+                        (
+                            sender,
+                            receiver,
+                            {
+                                "cl": CommunicationLink(
+                                    sender, receiver, aya_core_to_core_bw, unit_energy_cost
+                                )
+                            },
+                        )
                     )
-                )
             
         # From bottom to top
         pairs = zip(reversed(col), reversed(col[:-1]))
@@ -150,18 +153,19 @@ def get_2d_mesh(
             (sender, receiver) = pair
             if(sender.core_type == 1 or receiver.core_type == 1):  # skip memTile cores
                 continue
-            if not have_shared_memory(sender, receiver):
-                edges.append(
-                    (
-                        sender,
-                        receiver,
-                        {
-                            "cl": CommunicationLink(
-                                sender, receiver, aya_core_to_core_bw, unit_energy_cost
-                            )
-                        },
+            if use_shared_mem_flag:
+                if not have_shared_memory(sender, receiver):
+                    edges.append(
+                        (
+                            sender,
+                            receiver,
+                            {
+                                "cl": CommunicationLink(
+                                    sender, receiver, aya_core_to_core_bw, unit_energy_cost
+                                )
+                            },
+                        )
                     )
-                )
     ########### End of the logic for adding the links representing the shared memory
                 
     ########### Beginning of the logic for building the AXI4-Stream network

@@ -169,7 +169,8 @@ class CommunicationManager:
 
     def update_links(
         self,
-        tensor: Tensor,
+        #tensor: Tensor,
+        tensors: list,  # Aya: changed it to accept a list of future tensors when we use memTiles
         sender: Core or int,
         receiver: Core or int,
         receiver_memory_operand: str,
@@ -209,7 +210,7 @@ class CommunicationManager:
                 type="transfer",
                 start=start_timestep,
                 end=end_timestep,
-                tensors=[tensor],
+                tensors=tensors,#[tensor],
                 energy=duration * link.unit_energy_cost,
                 sender=sender,
                 receiver=receiver,
@@ -230,10 +231,12 @@ class CommunicationManager:
         # Energy cost of memory reads/writes on sender/receiver
         # For this we need to know the memory operand in order to know where in the sender/receiver the tensor is stored
         # We assume the tensor to be sent is defined from the sender perspective, so we take its operand as the sender memory operand
-        sender_memory_operand = tensor.memory_operand
-        memory_energy_cost = self.accelerator.get_memory_energy_cost_of_transfer(
-            tensor, sender, receiver, sender_memory_operand, receiver_memory_operand
-        )
+        memory_energy_cost = 0
+        for t in tensors:
+            sender_memory_operand = t.memory_operand
+            memory_energy_cost += self.accelerator.get_memory_energy_cost_of_transfer(
+                t, sender, receiver, sender_memory_operand, receiver_memory_operand
+            )
         return link_energy_cost, memory_energy_cost
 
     def block_offchip_links(
@@ -309,10 +312,15 @@ class CommunicationManager:
         best_idle_intersections.append((sys.maxsize, sys.maxsize))
         best_duration = sys.maxsize
 
+        total_tensors_size = 0
+        for t in tensors:
+            total_tensors_size += t.size
+
         # Aya: added this to support the potential of having multiple links
         for path in links:
             if hasattr(path, '__iter__'):
-                duration = max([ceil(tensors[0].size / link.bandwidth) for link in path])
+                # Aya: we will receive multiple tensors when we consider future tensors for memTile, so calculate the total size
+                duration = max([ceil(total_tensors_size / link.bandwidth) for link in path])
                 for i, (link, req_bw) in enumerate(path.items()):
                     req_bw = min(req_bw, link.bandwidth)  # ceil the bw
                     windows = link.get_idle_window(req_bw, duration, best_case_start, tensors, sender, receiver)
@@ -332,7 +340,7 @@ class CommunicationManager:
                     best_link = path
             else:
                 if not duration:
-                    duration = ceil(tensors[0].size / path.bandwidth)
+                    duration = ceil(total_tensors_size / path.bandwidth)
                 link = path
                 req_bw = path.bandwidth
                 req_bw = min(req_bw, link.bandwidth)  # ceil the bw

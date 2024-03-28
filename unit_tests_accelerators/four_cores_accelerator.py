@@ -41,6 +41,7 @@ cores_graph = get_2d_mesh(
     offchip_write_channels_num=2,#3, 
     memTile_read_channels_num=6,#6,
     memTile_write_channels_num=4,#4,
+    use_shared_mem_flag=False, # for the unit test of the spatial separation
     offchip_core=offchip_core,
 )  # , offchip_bandwidth=32)
 

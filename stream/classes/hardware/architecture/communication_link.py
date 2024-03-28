@@ -188,7 +188,7 @@ class CommunicationLink:
             if not event_duration_valid or not event_earliest_t_valid:
                 continue
             # compare the sender and receiver of this event to the new ones that we are currently checking the idle_window for
-            if event.sender == new_sender or event.receiver == new_receiver:# or event.sender == new_receiver or event.receiver == new_sender:
+            if event.sender == new_sender or event.receiver == new_receiver:
                 link_is_free = False
 
         if link_is_free:

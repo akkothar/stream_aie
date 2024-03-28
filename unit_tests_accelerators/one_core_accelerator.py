@@ -35,6 +35,7 @@ cores_graph = get_2d_mesh(
     offchip_write_channels_num=1, 
     memTile_read_channels_num=1,
     memTile_write_channels_num=1,
+    use_shared_mem_flag=True,
     offchip_core=offchip_core,
 )  # , offchip_bandwidth=32)
 

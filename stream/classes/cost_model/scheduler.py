@@ -41,7 +41,7 @@ def initialize_offchip_tensors(G: DiGraph, accelerator: Accelerator):
 
 
 def prefetch_constant_operands(
-    G: DiGraph, accelerator: Accelerator, operands_to_prefetch: list, links_printing_file: str  # Aya
+    G: DiGraph, accelerator: Accelerator, operands_to_prefetch: list, links_printing_file: str, dbg_memTile_file: str  # Aya
 ):
     total_cn_offchip_link_energy = 0
     total_cn_offchip_memory_energy = 0
@@ -67,7 +67,7 @@ def prefetch_constant_operands(
                         eviction_memory_energy_cost,
                         came_from_offchip,
                     ) = accelerator.transfer_tensor_to_core(
-                        tensor, core_allocation, memory_op, [], links_printing_file
+                        tensor, core_allocation, memory_op, [], [], False, links_printing_file, dbg_memTile_file,
                     )
                     assert came_from_offchip
                     total_cn_offchip_link_energy += transfer_link_energy_cost
@@ -175,7 +175,7 @@ def get_tensors_needed_for_node(node: ComputationNode, G: DiGraph):
 
 
 def clear_memories(
-    accelerator: Accelerator, core: Core, memory_operands, timestep, links_printing_file, exceptions=[]
+    accelerator: Accelerator, core: Core, memory_operands, timestep, commitFlag, links_printing_file, dbg_memTile_file, exceptions=[]
 ):
     total_eviction_to_offchip_link_energy = 0
     total_eviction_to_offchip_memory_energy = 0
@@ -185,7 +185,7 @@ def clear_memories(
             eviction_link_energy_cost,
             eviction_memory_energy_cost,
         ) = accelerator.remove_all(
-            core, too_large_operand, timestep, links_printing_file, exceptions, write_back_to_offchip=True
+            core, too_large_operand, timestep, commitFlag, links_printing_file, dbg_memTile_file, exceptions, write_back_to_offchip=True
         )
         total_eviction_to_offchip_link_energy += eviction_link_energy_cost
         total_eviction_to_offchip_memory_energy += eviction_memory_energy_cost
@@ -218,6 +218,7 @@ def check_for_removal(
     G: DiGraph,
     timestep: int,
     links_printing_file: str, # Aya
+    dbg_memTile_file: str,  # Aya
 ):
     offchip_core_id = accelerator.offchip_core_id
     for tensor_used_by_node in tensors:
@@ -272,16 +273,70 @@ def check_for_removal(
                     core,
                     tensor_used_by_node.memory_operand,
                     timestep_for_removal,
+                    False, # Aya: commit Flag
                     links_printing_file,  # Aya
+                    dbg_memTile_file,  # Aya
                 )
 
+# Aya
+def return_all_tensors_of_all_cns(
+    G: DiGraph,
+    scheduling_order=None,
+):
+    # List that keeps all possible candidate nodes for each core.
+    candidates = []
+    all_tensors = []
+    scheduled_nodes = set()
+    nb_graph_nodes = G.number_of_nodes()
+    nb_scheduled_nodes = 0
+
+    # Put the very first nodes of a layer that doesn't have any incoming edges as the first candidates
+    for source_node in (n for n, d in G.in_degree() if d == 0):
+        candidates.append((source_node))
+
+    done = False
+    while not done:
+        # Get the best candidate given the selection priority
+        if not candidates:
+            raise ValueError(f"There are no candidates to schedule.")
+        idxs = [scheduling_order.index(n.id) for n in candidates]
+        best_candidate_idx = idxs.index(min(idxs))
+        best_candidate = candidates[best_candidate_idx]
+        # Remove the candidate from the list of candidates
+        del candidates[best_candidate_idx]
+
+        tensors_this_candidate_needs, tensors_operands = get_tensors_needed_for_node(
+            best_candidate, G
+        )
+
+        for tensor, tensor_operand in zip(
+            tensors_this_candidate_needs, tensors_operands
+        ):
+            all_tensors.append((tensor))
+            
+        # Add this node to the scheduled nodes
+        scheduled_nodes.add(best_candidate)
+
+        # For each successor of this node, check if all of its predecessors have been scheduled
+        for successor in sorted(G.successors(best_candidate)):
+            if all((pred in scheduled_nodes for pred in G.predecessors(successor))):
+                candidates.append(successor)
+
+        # Increment the number of scheduled nodes
+        nb_scheduled_nodes += 1
+        done = nb_scheduled_nodes == nb_graph_nodes
+
+    return all_tensors
 
 def schedule_graph(
     G: DiGraph,
     accelerator: Accelerator,
     #layer_stacks: list,
+    all_tensors, # Aya
     tensor_sizes_file: str,  # Aya: added this to print the number of tensors and tensor sizes needed by each CN
     links_printing_file: str, # Aya
+    dbg_memTile_file: str, # Aya
+    future_tensors_num=4, # Aya: represents the number of tensors we will consider in a single transfer from the offchip core to the memTile core
     cores_idle_from=None,
     operands_to_prefetch=[],
     scheduling_order=None,
@@ -295,6 +350,10 @@ def schedule_graph(
         cores_start_offset (dict, optional): A dict containing for each core_id its start offset. Defaults to None.
         operands_to_prefetch (list, optional): The layer operands that should be prefetched at the start of the schedule.
     """
+    with open("check_all_tensors.txt", "a") as ff:
+        print(all_tensors, file=ff)
+
+
     # Initialize total link energy cost and memory energy costs
     total_cn_onchip_energy = 0
     total_cn_offchip_link_energy, total_cn_offchip_memory_energy = 0, 0
@@ -353,7 +412,7 @@ def schedule_graph(
         prefetch_eviction_to_offchip_memory_energy,
         full_dbg_transfer_prefetch_weights_end_timings,  # Aya: added this extra parameter to print for debugging
         cores_prefetched_to # Aya: added this extra parameter to print for debugging
-    ) = prefetch_constant_operands(G, accelerator, operands_to_prefetch, links_printing_file)
+    ) = prefetch_constant_operands(G, accelerator, operands_to_prefetch, links_printing_file, dbg_memTile_file)
 
     total_cn_offchip_link_energy += prefetch_cn_offchip_link_energy
     total_cn_offchip_memory_energy += prefetch_cn_offchip_memory_energy
@@ -367,6 +426,7 @@ def schedule_graph(
     dbg_tensors_transfer_details = []
 
     done = False
+    tensors_idx = 0  # Aya: added this to identify the idx of the tensor (belonging to any cn) that is about to be transferred
     while not done:
         # Get the best candidate given the selection priority
         best_candidate, preds_end = get_best_candidate(
@@ -409,7 +469,9 @@ def schedule_graph(
             core,
             best_candidate.too_large_operands,
             timestep,
-            links_printing_file,
+            commitFlag=False, # Aya
+            links_printing_file=links_printing_file,
+            dbg_memTile_file=dbg_memTile_file, # Aya
             exceptions=tensors_this_candidate_needs,
         )
         total_eviction_to_offchip_link_energy += clear_link_energy
@@ -421,6 +483,10 @@ def schedule_graph(
         for tensor, tensor_operand in zip(
             tensors_this_candidate_needs, tensors_operands
         ):
+            if len(all_tensors) - tensors_idx > future_tensors_num:
+                future_tensors = all_tensors[tensors_idx: tensors_idx + future_tensors_num]
+            else:
+                future_tensors = all_tensors[tensors_idx: len(all_tensors)]
             # Transfer the tensor
             (
                 transfer_complete_timestep,
@@ -430,13 +496,19 @@ def schedule_graph(
                 eviction_memory_energy_cost,
                 came_from_offchip,
                 use_memTile_flag_status,
+                memTile_core, # Aya: This core wil be valid only if use_memTile_flag_status is 2
             ) = accelerator.transfer_tensor_to_core(
                 tensor,
                 core_id,
                 tensor_operand,
                 tensors_this_candidate_needs,
+                future_tensors,
+                False, # Aya: commitFlag for future use
                 links_printing_file, # Aya
+                dbg_memTile_file, # Aya
             )
+
+            tensors_idx += 1 # Aya
 
             # Aya: depending on the value of use_memTile_flag_status, we might need to issue another transfer_tensor_to_core before taking the final transfer_complete_timestep
             transfer_complete_timestep_2 = 0
@@ -453,21 +525,29 @@ def schedule_graph(
                     eviction_link_energy_cost_2,
                     eviction_memory_energy_cost_2,
                     came_from_offchip_2,
-                    use_memTile_flag_status_2
+                    use_memTile_flag_status_2, 
+                    memTile_core_2, # Aya: This core wil be valid only if use_memTile_flag_status is 2
                 ) = accelerator.transfer_tensor_to_core(
                     tensor,
                     core_id,  # it still takes the same receiver core_id because now we are transferring from the memTile to the original receiver
                     tensor_operand,
                     tensors_this_candidate_needs,
+                    [],  # Aya: I do not need to pass any future_tensors to the second call of transfer_tensor_to_core
+                    False, # Aya: commitFlag for future use
                     links_printing_file, # Aya
+                    dbg_memTile_file, # Aya
+                    # specify the sender_core_id
+                    memTile_core, # Take the memTile_core returned by the previous transfer as the sender core
                 )
-
 
             # Update the possible start time of this node
             timestep = max(timestep, transfer_complete_timestep + transfer_complete_timestep_2)
 
+            with open("check_memTile_transfer_end.txt", "a") as ff:
+                print("The value of came_from_offchip_1 is {} and came_from_offchip_2 is {} and the value of use_memTile_flag_status is {} and use_memTile_flag_status_2 is {} and the transfer_complete_timestep is {} and the transfer_complete_timestep_2 is {} and the sum timestep is {}".format(came_from_offchip, came_from_offchip_2, use_memTile_flag_status, use_memTile_flag_status_2, transfer_complete_timestep, transfer_complete_timestep_2, timestep), file=ff)
+
             # Aya
-            dbg_tensors_transfer_details.append((came_from_offchip, False, core_id, transfer_complete_timestep + transfer_complete_timestep_2, tensor_operand, tensor, best_candidate))
+            dbg_tensors_transfer_details.append((came_from_offchip, False, core_id, timestep, tensor_operand, tensor, best_candidate))
 
             # Add the energy costs to their respective trackers
             if came_from_offchip:
@@ -511,11 +591,14 @@ def schedule_graph(
             eviction_link_energy_cost,
             eviction_memory_energy_cost,
         ) = accelerator.make_space_for(
-            output_tensor,
-            core_to_add_output_to,
-            output_memory_operand,
-            timestep,
-            tensors_this_candidate_needs,
+            dbg_memTile_file=dbg_memTile_file,
+            tensor=output_tensor,
+            core=core_to_add_output_to,
+            memory_op=output_memory_operand,
+            timestep=timestep,
+            commitFlag=False,  # Aya
+            links_printing_file=links_printing_file,
+            tensors_to_avoid_evicting=tensors_this_candidate_needs,
         )
         total_eviction_to_offchip_link_energy += eviction_link_energy_cost
         total_eviction_to_offchip_memory_energy += eviction_memory_energy_cost
@@ -559,6 +642,7 @@ def schedule_graph(
             G,
             end,
             links_printing_file, # Aya
+            dbg_memTile_file, # Aya
         )
 
         ## Step 7
@@ -576,7 +660,9 @@ def schedule_graph(
                     core,
                     output_tensor.memory_operand,
                     end,
+                    False, # Aya
                     links_printing_file,
+                    dbg_memTile_file=dbg_memTile_file, # Aya
                     write_back_to_offchip=True,
                 )
                 total_sink_layer_output_offchip_link_energy += link_energy_cost
