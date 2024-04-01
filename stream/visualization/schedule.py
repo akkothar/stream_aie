@@ -1,6 +1,7 @@
 from brokenaxes import brokenaxes
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
+from math import isnan
 from networkx import DiGraph
 import numpy as np
 import logging
@@ -14,6 +15,7 @@ import pickle
 import networkx as nx
 import argparse
 from itertools import cycle
+
 
 
 logger = logging.getLogger(__name__)
@@ -172,7 +174,17 @@ def plot_timeline_brokenaxes(
     hline_loc = core_and_transfer_link_ids[-1] - 0.5
     core_and_transfer_link_ids = core_and_transfer_link_ids[:-1]
     # Always define the last core as DRAM, not including DRAM in the core
-    y_labels = [f"Core {core_id}" for core_id in core_and_transfer_link_ids]
+    #y_labels = [f"Core {core_id}" for core_id in core_and_transfer_link_ids]
+    y_labels = []
+    for core_id in core_and_transfer_link_ids:
+        if accelerator.get_core(core_id).core_type == 1: # memTile
+            y_labels.append(f"MemTile {core_id}")
+        elif accelerator.get_core(core_id).core_type == 0: # compute
+            y_labels.append(f"Core {core_id}")
+        else:
+            y_labels.append(f"DRAM {core_id}")
+
+
 
     if plot_data_transfer:
         # First get all used and unique communication links
@@ -310,7 +322,10 @@ def plot_timeline_brokenaxes(
     bax.invert_yaxis()
     # replace all DRAM core (the core with the last core index) to 'DRAM'
     for i, label in enumerate(y_labels):
-        y_labels[i] = label.replace(f"Core({accelerator.offchip_core_id})", "DRAM")
+        if "MemTile" in label:
+            y_labels[i] = label.replace(f"MemTile({accelerator.offchip_core_id})", "DRAM")
+        else:
+            y_labels[i] = label.replace(f"Core({accelerator.offchip_core_id})", "DRAM")
     axs[0].set_yticks(range(len(y_labels)))
     axs[0].set_yticklabels(y_labels)
     plt.show(block=False)
@@ -369,10 +384,12 @@ def add_dependency_button(fig):
     )
 
 
-def add_dependencies(fig, scme, colors):
+def add_dependencies(fig, scme, colors, layer_ids):
     for node in scme.workload.nodes():
         c_id = node.id
         c_l = node.id[0]
+        if c_l not in layer_ids:
+            continue
         preds = scme.workload.predecessors(node)
         for pred in preds:
             p_id = pred.id
@@ -425,9 +442,11 @@ def get_communication_dicts(scme):
             start = event.start
             end = event.end
             runtime = end - start
+            energy = event.energy
             tensors = event.tensors
             node = event.tensors[0].origin
             layer_id = node.id[0]
+            activity = event.activity
             if runtime == 0:
                 continue
             d = dict(
@@ -439,6 +458,8 @@ def get_communication_dicts(scme):
                 Runtime=runtime,
                 Tensors=tensors,
                 Type=task_type,
+                Activity=activity,
+                Energy=energy,
             )
             dicts.append(d)
     return dicts
@@ -455,16 +476,19 @@ def get_real_input_tensors(n, G):
     return inputs
 
 
-def get_dataframe_from_scme(scme, add_communication=False):
+def get_dataframe_from_scme(scme, layer_ids, add_communication=False):
     nodes = list(nx.topological_sort(scme.workload))
     dicts = []
     for node in nodes:
         id = node.id
         layer = id[0]
+        if layer not in layer_ids:
+            continue
         core_id = node.core_allocation
         start = node.start
         end = node.end
         runtime = node.runtime
+        energy = node.onchip_energy
         tensors = get_real_input_tensors(node, scme.workload)
         task_type = "compute"
         d = dict(
@@ -476,6 +500,8 @@ def get_dataframe_from_scme(scme, add_communication=False):
             Runtime=runtime,
             Tensors=tensors,
             Type=task_type,
+            Activity=np.nan,
+            Energy=energy,
         )
         dicts.append(d)
     if add_communication:
@@ -485,13 +511,25 @@ def get_dataframe_from_scme(scme, add_communication=False):
     return df
 
 
+def get_sorted_y_labels(df):
+    all_labels = set(df["Resource"].tolist())
+    # Get computation labels
+    computation_labels = [label for label in all_labels if "-" not in label]
+    # Get communication labels (rest of the labels)
+    communication_labels = [label for label in all_labels if label not in computation_labels]
+    return sorted(computation_labels) + sorted(communication_labels)
+
+
 def visualize_timeline_plotly(
     scme,
     draw_dependencies=False,
     draw_communication=True,
     fig_path="outputs/schedule.html",
+    layer_ids=None,
 ):
-    df = get_dataframe_from_scme(scme, draw_communication)
+    if not layer_ids:
+        layer_ids = sorted(set(n.id[0] for n in scme.workload.nodes()))
+    df = get_dataframe_from_scme(scme, layer_ids, draw_communication)
     # We get all the layer ids to get a color mapping for them
     layer_ids = sorted(list(set(df["Layer"].tolist())))
     color_cycle = cycle(sample_colorscale("rainbow", np.linspace(0, 1, len(layer_ids))))
@@ -502,6 +540,7 @@ def visualize_timeline_plotly(
     for idx, row in df.iterrows():
         start = row["Start"]
         runtime = row["Runtime"]
+        energy = row["Energy"]
         resource = row["Resource"]
         layer = row["Layer"]
         color = colors[layer]
@@ -512,7 +551,17 @@ def visualize_timeline_plotly(
         task_type = row["Type"]
         hatch = PLOTLY_HATCH_TYPES[task_type]
         marker = {"color": color, "pattern": {"shape": hatch}}
-        hovertext = f"<b>Task:</b> {name}<br><b>Tensors:</b> {tensors}<br><b>Runtime:</b> {runtime:.2e}"
+        hovertext = (
+            f"<b>Task:</b> {name}<br>"
+            f"<b>Tensors:</b> {tensors}<br>"
+            f"<b>Runtime:</b> {runtime:.2e}<br>"
+            f"<b>Start:</b> {start:.4e}<br>"
+            f"<b>End:</b> {start+runtime:.4e}<br>"
+            f"<b>Energy:</b> {energy:.4e}"
+        )
+        if not isnan(row["Activity"]):
+            activity = int(row["Activity"])
+            hovertext += f"<br><b>Activity:</b> {activity} %"
         bar = go.Bar(
             base=[start],
             x=[runtime],
@@ -531,7 +580,7 @@ def visualize_timeline_plotly(
 
     # Draw dependency lines if necessary
     if draw_dependencies:
-        add_dependencies(fig, scme, colors)
+        add_dependencies(fig, scme, colors, layer_ids)
 
     # Add button to show/hide dependencies
     add_dependency_button(fig)
@@ -543,9 +592,7 @@ def visualize_timeline_plotly(
     )
     # for bar in fig_timeline.data:
     #     fig.add_trace(go.Bar(bar), row=1,col=1)
-    fig.update_yaxes(
-        categoryorder="array", categoryarray=sorted(df["Resource"].tolist())
-    )
+    fig.update_yaxes(categoryorder="array", categoryarray=get_sorted_y_labels(df))
     fig.update_yaxes(autorange="reversed")
     fig.update_layout(barmode="stack")
     fig.update_layout(showlegend=True)

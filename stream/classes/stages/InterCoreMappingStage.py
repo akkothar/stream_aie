@@ -10,6 +10,17 @@ from stream.classes.opt.allocation.genetic_algorithm.fitness_evaluator import (
     StandardFitnessEvaluator,
 )
 from stream.utils import get_too_large_operands
+from zigzag.classes.cost_model.cost_model import get_total_inst_bandwidth
+
+# Aya
+from zigzag.visualization.results.print_mapping import (
+    print_mapping as aya_print_mapping, 
+    print_good_tm_format as aya_print_good_tm_format,
+    print_printing_block as aya_print_printing_block,
+)
+# Aya:
+import matplotlib.pyplot as plt
+import networkx as nx
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +46,6 @@ class InterCoreMappingStage(Stage):
         plot_file_name,
         plot_full_schedule=False,
         plot_data_transfer=False,
-        scheduler_candidate_selection,
         operands_to_prefetch,
         **kwargs,
     ):
@@ -59,10 +69,23 @@ class InterCoreMappingStage(Stage):
         self.fig_path = plot_file_name
         self.plot_full_schedule = plot_full_schedule
         self.plot_data_transfer = plot_data_transfer
-        self.scheduler_candidate_selection = scheduler_candidate_selection
         self.operands_to_prefetch = operands_to_prefetch
+        
+        # Aya
+        self.aya_dfg = kwargs["aya_dfg"]
+        self.memTile_flag = kwargs["memTile_flag"]
 
-        # Determine the set of all (layer, group) combinations to vbe allocated separately
+        #self.original_workload = kwargs["original_workload"]
+        self.scheduling_order = kwargs.get("scheduling_order", None)
+
+        # Aya: added this to customize the path to the output
+        self.results_path = kwargs["results_path"]
+
+         # Aya: added this to print the original DFG workload before applying any splitting
+        # with open(self.results_path + "/testing_cns_preds_Original_DFG_in_InterStage.txt", "a") as ff:
+        #     self.print_cns_preds(ff)
+
+        # Determine the set of all (layer, group) combinations to be allocated separately
         self.layer_groups = sorted(
             set((n.id[0], n.group) for n in self.workload.nodes())
         )
@@ -102,13 +125,15 @@ class InterCoreMappingStage(Stage):
         self.set_hw_performance_non_flexible_nodes()
 
         # Initialize the fitness evaluator of different core allocations
+        
         self.fitness_evaluator = StandardFitnessEvaluator(
             self.workload,
             self.accelerator,
             self.node_hw_performances,
             self.layer_groups_flexible,
-            self.scheduler_candidate_selection,
             self.operands_to_prefetch,
+            self.scheduling_order,
+            self.results_path,
         )
 
         # Extract the length of an individual.
@@ -123,6 +148,14 @@ class InterCoreMappingStage(Stage):
             max(core_ids) - min(core_ids) + 1
         )  # Assuming they are incrementing with step size 1
 
+    # Aya: added this function to print information about the depth of object fifos by checking the number of predecessors for each CN in the workload graph
+    def print_cns_preds(self, printing_file):
+        if self.aya_dfg.__len__() == 0:
+            print("There are no dependencies between the computation nodes!\n", file=printing_file)
+        for node in self.aya_dfg:
+            print("Predecessors of Node {} are: {}\n".format(node.id, list((self.aya_dfg.predecessors(node)))), file=printing_file)
+        #print(nx.dfs_successors(self.workload), file=printing_file)
+
     def run(self):
         """Run the InterCoreMappingStage by checking if we have a fixed core_allocation.
         - if yes: evaluate fixed core allocation
@@ -130,6 +163,18 @@ class InterCoreMappingStage(Stage):
         """
 
         logger.info(f"Start InterCoreMappingStage.")
+
+        # Aya: paths to files for exporting useful information about the scheduling and the mapping outputs
+        cns_start_end_cycles_printing_file = self.results_path+"/check_cns_start_end_cycles.txt"
+        tensors_transfer_end_cycles = self.results_path+"/check_tensors_end_transfer_cycles.txt"
+        prefetch_weights_printing_file = self.results_path+"/check_weights_prefetch_transfer_cycles.txt"
+        actual_links_printing_file = self.results_path+"/check_actual_cores_links.txt"
+        mapping_output_printing_file = self.results_path+"/mapping_output.txt"
+
+        # print("****************************************")
+        # print(nx.dfs_successors(self.workload))
+        # print("****************************************")
+
         if self.individual_length == 0:
             logger.info(f"Evaluating fixed layer-core allocation.")
             core_allocations = []
@@ -142,11 +187,33 @@ class InterCoreMappingStage(Stage):
                                fig_path=f"outputs/schedule_plot{self.fig_path}fixed.png")
             scme.plot_memory_usage(fig_path=f"outputs/memory_usage_plot{self.fig_path}fixed.png")
             """
+
+            # Aya: this function prints to file the cycles at the beginning of tensor transfers between cores to help us understand the final schedule
+            with open(cns_start_end_cycles_printing_file, "a") as ff:
+                self.fitness_evaluator.print_to_file_cns_cycles_results(ff, self.accelerator.cores.nodes())
+
+            with open(tensors_transfer_end_cycles, "a") as ff:
+                self.fitness_evaluator.print_to_file_tensors_transfers_end_cycles(ff, self.accelerator.cores.nodes())
+
+            with open(prefetch_weights_printing_file, "a") as ff:
+                self.fitness_evaluator.print_to_file_weights_prefetching_cycles_results(ff)
+
+            with open(actual_links_printing_file, "a") as ff:
+                self.fitness_evaluator.print_to_file_used_links_between_cores(ff)
+
+            with open(self.results_path+"/cns_preds_objectFifoDepth.txt", "a") as ff:
+                self.print_cns_preds(ff)
+
             yield scme, None
         else:
             logger.info(
                 f"Running Inter-Core Allocation Optimization with Genetic Algorithm."
             )
+
+            # Aya: added the following to plot a graph of the explored design space
+            explored_energies = []
+            explored_latencies = []
+
             # Initialize the genetic algorithm
             self.genetic_algorithm = GeneticAlgorithm(
                 self.fitness_evaluator,
@@ -162,16 +229,86 @@ class InterCoreMappingStage(Stage):
             print(hof)
             if self.plot_hof:
                 for i, core_allocations in enumerate(hof):
-                    results = self.fitness_evaluator.get_fitness(
+                    # results = self.fitness_evaluator.get_fitness(
+                    #     core_allocations, return_scme=True
+                    # )
+                    #scme = results[-1]
+                    (energy, latency, scme) = self.fitness_evaluator.get_fitness(
                         core_allocations, return_scme=True
                     )
-                    scme = results[-1]
+                    explored_energies.append(energy)
+                    explored_latencies.append(latency)
+
+
+                    save_last_core_allocation = core_allocations  # Aya added this
+
                     """
                     scme.plot_schedule(plot_full_schedule=self.plot_full_schedule,
                                        plot_data_transfer=self.plot_data_transfer,
                                        fig_path=f"outputs/schedule_plot{self.fig_path}{i}.png")
                     scme.plot_memory_usage(fig_path=f"outputs/memory_usage_plot{self.fig_path}{i}.png")
                     """
+                
+                # plt.scatter(explored_latencies, explored_energies, c ="blue")
+                # plt.show()
+                # plt.savefig('design_space.png')
+                    
+                # Aya: these functions print to files the cycles at the beginning of tensor transfers between cores to help us understand the final schedule
+                # I'm printing it after the loop to use the final scme and the final transfer cycles
+                with open(cns_start_end_cycles_printing_file, "a") as ff:
+                    self.fitness_evaluator.print_to_file_cns_cycles_results(ff, self.accelerator.cores.nodes())
+
+                with open(tensors_transfer_end_cycles, "a") as ff:
+                    self.fitness_evaluator.print_to_file_tensors_transfers_end_cycles(ff, self.accelerator.cores.nodes())
+
+                with open(prefetch_weights_printing_file, "a") as ff:
+                    self.fitness_evaluator.print_to_file_weights_prefetching_cycles_results(ff)
+
+                with open(actual_links_printing_file, "a") as ff:
+                    self.fitness_evaluator.print_to_file_used_links_between_cores(ff)
+
+                with open(self.results_path+"/cns_preds_objectFifoDepth.txt", "a") as ff:
+                    self.print_cns_preds(ff)
+
+                ############## Aya: added the following code to extract the final cmes after the genetic algorithm and fitness_evaluator
+                old_layer_id = -1
+                for i, core_allocation in enumerate(save_last_core_allocation):
+                    core = self.accelerator.get_core(core_allocation)
+
+                    (layer_id, group_id) = self.layer_groups_flexible[i]
+                    # the mapping of all CNs of one layer should be identical so print only a single CN of each layer
+                    if(layer_id == old_layer_id):   
+                        continue
+                    old_layer_id = layer_id
+
+                    nodes = (
+                        node
+                        for node in self.workload.nodes()
+                        if isinstance(node, ComputationNode)
+                        and node.id[0] == layer_id
+                        and node.group == group_id
+                    )
+
+                    old_cme = []
+                    for node in nodes:
+                        equivalent_unique_node = next(
+                            (n for n in self.node_hw_performances.keys() if node == n)
+                        )
+                        cme = self.node_hw_performances[equivalent_unique_node][core]
+
+                        if(cme == old_cme):
+                            continue
+                        old_cme = cme
+
+                        with open(mapping_output_printing_file, "a") as ff:
+                            print("############ The mapping results for one layer are ############", file=ff)
+                            print("Number of elements at each memory level is {}".format(cme.mapping.data_elem_per_level), file=ff) # Zigzag's summary of tile sizes
+                            print("Number of bits at each memory level is {}\n".format(cme.mapping.data_bit_per_level), file=ff) # Zigzag's summary of tile sizes
+                            # print("Number of elements unrolled at each memory level is {}".format(cme.mapping.data_elem_per_level_unrolled), file=ff) # Zigzag's summary of tile sizes
+                            # print("Total Number of bits unrolled at each memory level is {}\n".format(cme.mapping.data_bit_per_level_unrolled), file=ff) # Zigzag's summary of tile sizes
+                            print("Spatial mapping field of the CME: {}".format(cme.spatial_mapping), file=ff)
+                            aya_print_mapping(cme, core, ff, self.memTile_flag)  # prints the table detailing the mapping
+                            print("############ End of the mapping results of one layer ############", file=ff)
             yield scme, None
         logger.info(f"Finished InterCoreMappingStage.")
 
@@ -209,12 +346,19 @@ class InterCoreMappingStage(Stage):
                 offchip_energy += layer_operand_offchip_energy
                 onchip_energy -= layer_operand_offchip_energy
 
-            nodes = (n for n in self.workload.nodes() if n == non_flexible_unique_node)
+            # If there was offchip memory added for too_large_operands, get the offchip bandwidth
+            offchip_core = self.accelerator.get_core(self.accelerator.offchip_core_id)
+            offchip_instance = next(v for k, v in offchip_core.mem_hierarchy_dict.items())[-1].memory_instance
+            offchip_bw = get_total_inst_bandwidth(cme, offchip_instance)
+
+            nodes = (n for n in self.workload.nodes() if n == non_flexible_unique_node and n.group == non_flexible_unique_node.group)
             for node in nodes:
                 self.set_hw_performance_node(
                     node, onchip_energy, offchip_energy, latency, core_allocation
                 )
                 node.set_too_large_operands(too_large_operands.copy())
+                node.set_offchip_bandwidth(offchip_bw)
+
 
     @staticmethod
     def set_hw_performance_node(

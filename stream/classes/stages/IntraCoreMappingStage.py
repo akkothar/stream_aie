@@ -1,8 +1,10 @@
 from enum import unique
+import os
 import pickle
 import networkx as nx
-from os import path, makedirs
 import logging
+
+import numpy as np
 
 from zigzag.classes.cost_model.cost_model import CostModelEvaluation
 from zigzag.classes.hardware.architecture.core import Core
@@ -11,6 +13,7 @@ from zigzag.classes.stages.Stage import Stage
 from stream.classes.workload.computation_node import ComputationNode
 from zigzag.utils import pickle_deepcopy
 from zigzag.classes.mapping.mapping_assist_funcs import decouple_pr_loop
+from stream.utils import load_scme, save_scme
 
 from stream.visualization.node_hw_performances import (
     visualize_node_hw_performances_pickle,
@@ -37,6 +40,9 @@ class IntraCoreMappingStage(Stage):
         self.accelerator = accelerator
         self.loma_lpf_limit = loma_lpf_limit
         self.loma_show_progress_bar = kwargs.get("loma_show_progress_bar", False)
+        self.node_hw_performances_path = kwargs.get("node_hw_performances_path", None)
+
+        self.memTile_flag = kwargs["memTile_flag"]
 
         # Extract all unique nodes that will have to be evaluated
         self.unique_nodes = []
@@ -47,7 +53,7 @@ class IntraCoreMappingStage(Stage):
                 (
                     unique_node
                     for unique_node in self.unique_nodes
-                    if node == unique_node
+                    if node == unique_node and node.group == unique_node.group
                 )
             )
             if not equal_nodes:
@@ -58,9 +64,9 @@ class IntraCoreMappingStage(Stage):
         for node in self.unique_nodes:
             if isinstance(node, ComputationNode):
                 if isinstance(node.core_allocation, int):
-                    self.valid_allocations[node] = [node.core_allocation]
+                    self.valid_allocations[node] = (node.core_allocation,)
                 elif isinstance(node.core_allocation, (list, tuple)):
-                    self.valid_allocations[node] = list(node.core_allocation)
+                    self.valid_allocations[node] = node.core_allocation
                 else:
                     raise ValueError(f"No core allocation for node {node}.")
                 # if not node.core_allocation:
@@ -77,22 +83,24 @@ class IntraCoreMappingStage(Stage):
 
     def run(self):
         logger.info(f"Start IntraCoreMappingStage.")
-        # If the kwargs include a node_hw_performances_path, load in the pickle:
-        if "node_hw_performances_path" in self.kwargs and path.exists(
-            self.kwargs["node_hw_performances_path"]
-        ):
+        if self.node_hw_performances_path:
             try:
-                with open(self.kwargs["node_hw_performances_path"], "rb") as handle:
-                    self.given_node_hw_performances = pickle.load(handle)
-                    # self.check_given_node_hw_performances()
-            except:  # loading in the pickle raises an error when the class definitions have changed
+                self.given_node_hw_performances = load_scme(self.node_hw_performances_path)
+            except:
                 self.given_node_hw_performances = None
-        else:
-            self.given_node_hw_performances = None
 
         for node in self.unique_nodes:
             self.node_hw_performances[node] = {}
-            for core_id in self.valid_allocations[node]:
+            if isinstance(self.valid_allocations[node], tuple):
+                try:
+                    core_ids = (self.valid_allocations[node][node.group],)
+                except IndexError:
+                    nb_groups = len(set((n.group for n in self.workload.nodes() if n.id == node)))
+                    assert len(self.valid_allocations[node]) == 1, f"Fixed mapping for {node.name} should contain {nb_groups} entries."
+                    core_ids = (self.valid_allocations[node][0],)
+            else:
+                core_ids = self.valid_allocations[node]
+            for core_id in core_ids:
                 core = self.accelerator.get_core(core_id)
                 # It's possible this node might not fully fit within the core's top level memories. If so, we update the core
                 too_large_operands_for_cme = self.check_core_capacity_for_node(
@@ -116,44 +124,56 @@ class IntraCoreMappingStage(Stage):
                 # Check if this (node, core) combination has already been optimized during this run
                 elif (
                     self.node_hw_performances
-                    and node in self.node_hw_performances
-                    and self.node_hw_performances[node]
                     and any(
                         (
-                            core.equals(processed_core)
-                            for processed_core in self.node_hw_performances[node]
+                            node == processed_node
+                            for processed_node in self.node_hw_performances
                         )
                     )
                 ):
-                    # Find the core that is equal
-                    equal_core = next(
-                        processed_core
-                        for processed_core in self.node_hw_performances[node]
-                        if core.equals(processed_core)
+                    equal_node = next(
+                        processed_node
+                        for processed_node in self.node_hw_performances
+                        if node == processed_node
                     )
-                    cme = self.node_hw_performances[node][equal_core]
-                    self.node_hw_performances[node][core] = cme
-                    self.save_node_hw_performances()
-                # Compute this (node, core) combination's optimal mapping
-                else:
-                    node.core_allocation = core_id  # Set the node's core allocation to the core_id we want to extract hw performance for
-                    node.user_spatial_mapping = (
-                        core.dataflows
-                    )  # Set the node's spatial mapping to the possible spatial mappings of the current core
-                    # Initialize the flow that will be followed to extract the optimal HW performance of every unique node-core allocation
-                    main_stage = self.get_intra_core_mapping_flow(
-                        node=node,
-                        too_large_operands=too_large_operands_for_cme,
-                        core_id=core_id,
-                    )
-                    answers = main_stage.run()
-                    assert (
-                        len(answers) == 1
-                    ), "IntraCoreMappingStage's subflow returned more than one CME"
-                    cme = answers[0][0]
-                    node.core_allocation = None  # Reset the node's core allocation
-                    self.node_hw_performances[node][core] = cme
-                    self.save_node_hw_performances()  # Save the hw performances dict after every node is finished
+                    if (
+                        self.node_hw_performances[equal_node]
+                        and any(
+                            (
+                                core.equals(processed_core)
+                                for processed_core in self.node_hw_performances[equal_node]
+                            )
+                        )
+                    ):
+                        # Find the core that is equal
+                        equal_core = next(
+                            processed_core
+                            for processed_core in self.node_hw_performances[equal_node]
+                            if core.equals(processed_core)
+                        )
+                        cme = self.node_hw_performances[equal_node][equal_core]
+                        self.node_hw_performances[node][core] = cme
+                        self.save_node_hw_performances()
+                    # Compute this (node, core) combination's optimal mapping
+                    else:
+                        node.core_allocation = core_id  # Set the node's core allocation to the core_id we want to extract hw performance for
+                        node.user_spatial_mapping = (
+                            core.dataflows
+                        )  # Set the node's spatial mapping to the possible spatial mappings of the current core
+                        # Initialize the flow that will be followed to extract the optimal HW performance of every unique node-core allocation
+                        main_stage = self.get_intra_core_mapping_flow(
+                            node=node,
+                            too_large_operands=too_large_operands_for_cme,
+                            core_id=core_id,
+                        )
+                        answers = main_stage.run()
+                        assert (
+                            len(answers) == 1
+                        ), "IntraCoreMappingStage's subflow returned more than one CME"
+                        cme = answers[0][0]
+                        node.core_allocation = None  # Reset the node's core allocation
+                        self.node_hw_performances[node][core] = cme
+                        self.save_node_hw_performances()  # Save the hw performances dict after every node is finished
         self.visualize_node_hw_performances()
         kwargs = self.kwargs.copy()
         kwargs["workload"] = self.workload
@@ -166,18 +186,12 @@ class IntraCoreMappingStage(Stage):
             yield cme, extra_info
 
     def save_node_hw_performances(self):
-        if "node_hw_performances_path" in self.kwargs:
-            folder_path = "/".join(
-                self.kwargs["node_hw_performances_path"].split("/")[:-1]
-            )
-            if not path.isdir(folder_path):
-                makedirs(folder_path)
-            with open(self.kwargs["node_hw_performances_path"], "wb") as handle:
-                pickle.dump(
-                    self.node_hw_performances, handle, protocol=pickle.HIGHEST_PROTOCOL
-                )
+        if self.node_hw_performances_path:
+            parent = os.path.dirname(self.node_hw_performances_path)
+            os.makedirs(parent, exist_ok=True)
+            save_scme(self.node_hw_performances, self.node_hw_performances_path)
             logger.debug(
-                f'Saved unique CN node HW performance to {self.kwargs["node_hw_performances_path"]}.'
+                f'Saved unique CN node HW performance to {self.node_hw_performances_path}.'
             )
 
     def visualize_node_hw_performances(self):
@@ -190,13 +204,15 @@ class IntraCoreMappingStage(Stage):
                 }
                 # Run the visualization
                 visualize_node_hw_performances_pickle(
-                    self.kwargs["node_hw_performances_path"],
+                    self.node_hw_performances,
                     scale_factors,
                     self.kwargs["visualize_node_hw_performances_path"],
                 )
 
     def get_intra_core_mapping_flow(self, node, too_large_operands, core_id):
-        logger.info(f"Launching intra-core mapping optimization for {node} -> core {core_id} ...")
+        logger.info(
+            f"Launching intra-core mapping optimization for {node} -> core {core_id} ..."
+        )
 
         if too_large_operands:
             accelerator = self.add_offchip_to_core(
@@ -424,12 +440,57 @@ class IntraCoreMappingStage(Stage):
         )
         updated_accelerator = pickle_deepcopy(self.accelerator)
         core: Core = updated_accelerator.get_core(core_id)
+
+    ################# Aya: towards adding the memTile to the memory hierarchy
+        if(self.memTile_flag):
+            # Aya: identify the memTile core in the column of the core under study
+            cores_without_offchip = []
+            for one_core in self.accelerator.cores:
+                if one_core.id is not self.accelerator.offchip_core_id:
+                    cores_without_offchip.append(one_core)
+
+            accelerator_cores_array = np.asarray(cores_without_offchip).reshape((self.accelerator.nb_rows, self.accelerator.nb_cols), order="C")
+            for col in accelerator_cores_array.T:
+                if core in col:
+                    for one_core in col:
+                        if(one_core.core_type == 1):
+                            mem_tile_core = one_core
+
+            # old way of identifying memTile assumes that we have only a single memTile
+            # mem_tile_core = pickle_deepcopy(
+            #     self.accelerator.get_core(7)  # Aya: for now hardcoding the id to always assuming it is 7, TODO: pass it as a parameter
+            # )
+
+            mem_tile_memory_levels = mem_tile_core.memory_hierarchy.mem_level_list
+            mem_tile_memory_level = pickle_deepcopy(mem_tile_memory_levels[0])
+            mem_tile_memory_instance = mem_tile_memory_level.memory_instance
+            mem_tile_memory_operands = too_large_operands
+            # Recreate the port allocation
+            mem_tile_port_alloc_raw = []
+            for memory_operand in mem_tile_memory_operands:
+                operand_idx_in_mem_tile_level = mem_tile_memory_level.operands.index(
+                    memory_operand
+                )
+                mem_tile_port_alloc_raw.append(
+                    mem_tile_memory_level.port_alloc_raw[operand_idx_in_mem_tile_level]
+                )
+            mem_tile_port_alloc_raw = tuple(mem_tile_port_alloc_raw)
+            mem_tile_served_dimensions = "all"
+
+            core.memory_hierarchy.add_memory(
+                mem_tile_memory_instance,
+                mem_tile_memory_operands,
+                mem_tile_port_alloc_raw,
+                mem_tile_served_dimensions,
+            )
+    ###############################################################
+
         offchip_core = pickle_deepcopy(
             self.accelerator.get_core(self.accelerator.offchip_core_id)
         )
         ## Sanity checks
         # Make sure that there is only one offchip memory
-        offchip_memory_levels = offchip_core.memory_hierarchy.mem_instance_list
+        offchip_memory_levels = offchip_core.memory_hierarchy.mem_level_list
         assert (
             len(offchip_memory_levels) == 1
         ), "There is more than one offchip memory, unsure which one to take for intra core mapping"
@@ -458,45 +519,3 @@ class IntraCoreMappingStage(Stage):
         core.recalculate_memory_hierarchy_information()  # Recalculates some internals of the Core object
 
         return updated_accelerator
-
-    # def check_and_update_core_for_node(self, core: Core, node: ComputationNode):
-    #     """Check if the given ComputationNode fits within the top level memories of the given core.
-    #     If not, we add the top level memory of the off-chip core as the top level memory of the updated core,
-    #     which is used to extract the intra core mapping energy and runtime.
-
-    #     Args:
-    #         core (Core): The core to conditionally update.
-    #         node (ComputationNode): The node we want to map onto the core.
-    #     """
-    #     offchip_core = self.accelerator.get_core(self.accelerator.offchip_core_id)
-    #     for (layer_operand, memory_operand) in node.memory_operand_links.items():
-    #         highest_mem_op_level = core.memory_hierarchy.get_memory_levels(memory_operand)[-1]
-    #         on_core_memory_size_bit = highest_mem_op_level.memory_instance.size
-    #         if node.operand_size_bit[layer_operand] > on_core_memory_size_bit:  # We need to add off-chip memory as the top level memory
-    #             ## Sanity checks
-    #             # Make sure that there is only one offchip memory
-    #             offchip_memory_levels = offchip_core.memory_hierarchy.mem_instance_list
-    #             assert len(offchip_memory_levels) == 1, "There is more than one offchip memory, unsure which one to take for intra core mapping"
-    #             offchip_memory_level = pickle_deepcopy(offchip_memory_levels[0])
-    #             offchip_memory_instance = offchip_memory_level.memory_instance
-    #             assert offchip_memory_instance.size >= sum(node.operand_size_bit.values()), f"Even offchip memory isn't big enough to store all data for node {node}."
-    #             offchip_memory_operands = offchip_memory_level.operands
-    #             assert all([offchip_mem_operand in core.memory_hierarchy.operands for offchip_mem_operand in offchip_memory_operands]), f"Memory operands not equal for core {core} and offchip {offchip_core}"
-    #             offchip_port_alloc_raw = offchip_memory_level.port_alloc_raw
-    #             offchip_served_dimensions = "all"
-    #             # Calculate what the mem_levels_of_operand attribute should be (not sure what this is used for exactly but better safe than sorry)
-    #             expected_mem_level_of_operands = dict()
-    #             core_memory_levels = core.memory_hierarchy.get_top_memories()[0]
-    #             for core_memory_level in core_memory_levels:
-    #                 expected_mem_level_of_operands |= core_memory_level.mem_level_of_operands
-    #             for k, v in expected_mem_level_of_operands.items():
-    #                 expected_mem_level_of_operands[k] = v + 1
-
-    #             # Create a copy to add the offchip memory level to
-    #             updated_core: Core = pickle_deepcopy(core)
-    #             # Easiest way to add the offchip memory level is to do an 'add_memory()' call to the MemoryHierarchy
-    #             updated_core.memory_hierarchy.add_memory(offchip_memory_instance, offchip_memory_operands, offchip_port_alloc_raw, offchip_served_dimensions)
-    #             updated_core.recalculate_memory_hierarchy_information()  # Recalculates some internals of the Core object
-    #             assert updated_core.memory_hierarchy.get_memory_levels(memory_operand)[-1].mem_level_of_operands == expected_mem_level_of_operands, "Updated core top level doesn't have expected mem_level_of_operands"
-    #             return updated_core
-    #     return core

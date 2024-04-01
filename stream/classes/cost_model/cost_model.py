@@ -1,7 +1,7 @@
 from networkx import DiGraph
 
 from stream.classes.hardware.architecture.accelerator import Accelerator
-from stream.classes.cost_model.scheduler import schedule_graph
+from stream.classes.cost_model.scheduler import schedule_graph, return_all_tensors_of_all_cns # Aya
 from stream.visualization.memory_usage import plot_memory_usage
 from stream.visualization.schedule import plot_timeline_brokenaxes
 
@@ -16,8 +16,11 @@ class StreamCostModelEvaluation:
         self,
         workload: DiGraph,
         accelerator: Accelerator,
-        scheduler_candidate_selection: str,
+        #scheduler_candidate_selection: str,
         operands_to_prefetch: list,
+        #layer_stacks: list,
+        scheduling_order: list,  # newly added for supporting broadcasting
+        results_path: str,    # Aya
     ) -> None:
         # Initialize the SCME by setting the workload graph to be scheduled
         self.workload = workload
@@ -36,21 +39,45 @@ class StreamCostModelEvaluation:
         self.latency = None
         self.max_memory_usage = None
         self.core_timesteps_delta_cumsums = None
-        self.scheduler_candidate_selection = scheduler_candidate_selection
+        #self.scheduler_candidate_selection = scheduler_candidate_selection
         self.operands_to_prefetch = operands_to_prefetch
+        #self.layer_stacks = layer_stacks
+        self.scheduling_order = scheduling_order
+
+        self.results_path = results_path
 
     def __str__(self):
         return f"SCME(energy={self.energy:.2e}, latency={self.latency:.2e})"
 
     def run(self):
-        """Run the SCME by scheduling the graph through time. The scheduler takes into account inter-core data movement and also tracks energy and memory through the memory manager.
+        """Run the SCME by scheduling the graph through time.
+        The scheduler takes into account inter-core data movement and also tracks energy and memory through the memory manager.
         This assumes each node in the graph has an energy and runtime of the core to which they are allocated to.
         """
+        # Aya
+        tensors_printing_file = self.results_path+"/tensors_details_for_objectFifos.txt"
+        
+        links_printing_file = self.results_path+"/links_chosen_for_transfers_between_cores.txt"
+        
+        dbg_memTile_file = self.results_path+"/dbg_memTile.txt"
+
+        all_tensors = return_all_tensors_of_all_cns(
+            self.workload, 
+            scheduling_order=self.scheduling_order,
+        )
+
         results = schedule_graph(
             self.workload,
             self.accelerator,
-            candidate_selection=self.scheduler_candidate_selection,
+            #self.layer_stacks,
+            #all_tensors,
+            [],
+            tensors_printing_file,
+            links_printing_file,
+            dbg_memTile_file,
+            #candidate_selection=self.scheduler_candidate_selection,
             operands_to_prefetch=self.operands_to_prefetch,
+            scheduling_order=self.scheduling_order,
         )
         self.latency = results[0]
         self.total_cn_onchip_energy = results[1]
@@ -82,6 +109,8 @@ class StreamCostModelEvaluation:
             + self.total_core_to_core_link_energy
             + self.total_core_to_core_memory_energy
         )
+         # Aya: returning the start time of each transfer to help better understand the produced schedule
+        return results[10], results[11], results[12], results[13]
 
     def plot_schedule(
         self,

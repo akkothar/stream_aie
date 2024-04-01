@@ -32,7 +32,10 @@ class GeneticAlgorithm:
             num_individuals / 2
         )  # number of indiviuals taken from previous generation
         self.para_lambda = num_individuals  # number of indiviuals in generation
-        self.prob_crossover = 0.3  # probablility to perform corssover
+        if individual_length > 1:
+            self.prob_crossover = 0.3  # probablility to perform corssover
+        else:
+            self.prob_crossover = 0  # can't do crossover if individual length of 1
         self.prob_mutation = 0.7  # probablility to perform mutation
         self.valid_allocations = valid_allocations
 
@@ -122,6 +125,11 @@ class GeneticAlgorithm:
         )
         # stats.register("saved", self.save_population)
 
+        # Aya: added the following to plot the design space
+        self.statistics_evaluator.append_generation(self.pop)
+        self.statistics_evaluator.plot_evolution()
+        self.statistics_evaluator.plot_population(self.pop)
+
         logbook = algorithms.eaMuPlusLambda(
             self.pop,
             self.toolbox,
@@ -175,10 +183,14 @@ class GeneticAlgorithm:
                     individual[position] = random.choice(valid_new_core_allocations)
         # swap the core allocation of two randomly chosen positions
         else:
-            first_position, second_position = random.sample(range(len(individual)), 2)
-            tmp = individual[second_position]
-            individual[second_position] = individual[first_position]
-            individual[first_position] = tmp
+            if len(individual) > 1:
+                first_position, second_position = random.sample(range(len(individual)), 2)
+                tmp = individual[second_position]
+                individual[second_position] = individual[first_position]
+                individual[first_position] = tmp
+            else:
+                # Impossible to swap two positions if there is only one position
+                pass
 
         return (individual,)
 
