@@ -307,7 +307,7 @@ class InterCoreMappingStage(Stage):
                             # print("Number of elements unrolled at each memory level is {}".format(cme.mapping.data_elem_per_level_unrolled), file=ff) # Zigzag's summary of tile sizes
                             # print("Total Number of bits unrolled at each memory level is {}\n".format(cme.mapping.data_bit_per_level_unrolled), file=ff) # Zigzag's summary of tile sizes
                             print("Spatial mapping field of the CME: {}".format(cme.spatial_mapping), file=ff)
-                            aya_print_mapping(cme, core, ff, self.memTile_flag)  # prints the table detailing the mapping
+                            # aya_print_mapping(cme, core, ff, self.memTile_flag)  # prints the table detailing the mapping
                             print("############ End of the mapping results of one layer ############", file=ff)
             yield scme, None
         logger.info(f"Finished InterCoreMappingStage.")
