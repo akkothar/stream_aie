@@ -541,7 +541,7 @@ def schedule_graph(
                 )
 
             # Update the possible start time of this node
-            timestep = max(timestep, transfer_complete_timestep + transfer_complete_timestep_2)
+            timestep = max(timestep, transfer_complete_timestep_2)
 
             with open("check_memTile_transfer_end.txt", "a") as ff:
                 print("The value of came_from_offchip_1 is {} and came_from_offchip_2 is {} and the value of use_memTile_flag_status is {} and use_memTile_flag_status_2 is {} and the transfer_complete_timestep is {} and the transfer_complete_timestep_2 is {} and the sum timestep is {}".format(came_from_offchip, came_from_offchip_2, use_memTile_flag_status, use_memTile_flag_status_2, transfer_complete_timestep, transfer_complete_timestep_2, timestep), file=ff)
