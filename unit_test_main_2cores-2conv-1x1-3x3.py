@@ -38,8 +38,8 @@ CN_define_mode =4 # automatically split layers if too big to fit: # manually def
 split_W_percentage = 0.9 # max percentage of capacity a single node's weights can be
 hint_loops = [("OY", "all")] # outer CN loops, with error in resnet18 plotting
 
-nb_ga_individuals = 16  # number of individuals in each generation
-nb_ga_generations = 16  # number of genetic algorithm generations
+nb_ga_individuals = 4  # number of individuals in each generation
+nb_ga_generations = 4  # number of genetic algorithm generations
 ######################################################################
 
 hw_name = accelerator.split(".")[-1]
