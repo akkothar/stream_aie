@@ -161,6 +161,8 @@ class CommunicationLink:
         with atleast 'activity' percent available.
         """
         valid_windows = []
+
+        is_broadcast_flag = False  # Aya: added a flag to be appended in valid_windows to be True if we are broadcasting
         ## Check if this tensor has already been transferred on this link before
         # If so, check duration and earliest timestep requirements of this call
         for tensor in tensors:
@@ -172,12 +174,14 @@ class CommunicationLink:
                     # Previous event needs to have happened at late enough time
                     earliest_t_valid = previous_event.start >= earliest_t
                     if duration_valid and earliest_t_valid:
-                        valid_windows.append((previous_event.start, previous_event.end))
+                        is_broadcast_flag = True
+                        valid_windows.append((previous_event.start, previous_event.end, is_broadcast_flag))
         
         ################# Aya's edits to add support for the spatial separation of links
         # Aya: loop over the events field and check the sender and receiver of each event (if it is overlapping)
             # Aya: if the sender and receiver of all overlapping events are different from the current sender and receiver that we are trying to schedule a transfer for then start as soon as possible
                 # Aya: Else, follow the original flow
+        is_broadcast_flag = False  # Aya: added a flag to be appended in valid_windows to be True if we are broadcasting
         link_is_free = True  # it will be False if any of the sender and receiver of the overlapping events are the same as the current sender and receiver
         for event in self.events:
             # Previous event needs to be long enough
@@ -193,7 +197,8 @@ class CommunicationLink:
 
         if link_is_free:
             # issue the transfer immediately
-            valid_windows.append((earliest_t, earliest_t + duration))
+            end = earliest_t + duration
+            valid_windows.append((earliest_t, end, is_broadcast_flag))
         else:
         ######################################################
             ## Check other possible periods given the activity
@@ -213,7 +218,7 @@ class CommunicationLink:
             for idx in idxs:
                 end = updated_ts[idx]
                 if end - start >= duration:
-                    valid_windows.append((start, end))
+                    valid_windows.append((start, end, is_broadcast_flag))
                 try:
                     start = updated_ts[idx+1]
                 except:

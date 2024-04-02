@@ -516,6 +516,8 @@ def schedule_graph(
             transfer_memory_energy_cost_2 = 0
             eviction_link_energy_cost_2 = 0
             eviction_memory_energy_cost_2 = 0
+            came_from_offchip_2 = False
+            use_memTile_flag_status_2 = 0 # initialization
             if use_memTile_flag_status == 2:
                  # Transfer the tensor
                 (

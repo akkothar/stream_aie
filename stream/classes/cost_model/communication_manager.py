@@ -334,10 +334,15 @@ class CommunicationManager:
                         ]
                 # Aya: added this to define a rule for deciding which path to choose
                         # Aya: I'm doing it after the loop since the above loop is meant to go through the multiple links inside one path, in case the cores are not directly connected 
-                if idle_intersections[0][0] < best_idle_intersections[0][0]:
+                if windows[0][2] is True:
                     best_idle_intersections = idle_intersections
                     best_duration = duration
                     best_link = path
+                else:
+                    if idle_intersections[0][0] < best_idle_intersections[0][0]:
+                        best_idle_intersections = idle_intersections
+                        best_duration = duration
+                        best_link = path
             else:
                 if not duration:
                     duration = ceil(total_tensors_size / path.bandwidth)
@@ -347,10 +352,15 @@ class CommunicationManager:
                 windows = link.get_idle_window(req_bw, duration, best_case_start, tensors, sender, receiver)
                 idle_intersections = windows
                 # Aya: added this to define a rule for deciding which 
-                if idle_intersections[0][0] < best_idle_intersections[0][0]:
+                if windows[0][2] is True:
                     best_idle_intersections = idle_intersections
                     best_duration = duration
                     best_link = path
+                else:
+                    if idle_intersections[0][0] < best_idle_intersections[0][0]:
+                        best_idle_intersections = idle_intersections
+                        best_duration = duration
+                        best_link = path
 
         # Convert the best_link from dict to list of CLs
         if isinstance(best_link, dict):

@@ -75,7 +75,7 @@ class StatisticsEvaluator:
         else:
             plt.ylabel(self.fitness_evaluator.metrics[1])
         # plt.legend(loc='upper right')
-        plt.show()
+        #plt.show()
 
         if len(self.fitness_evaluator.metrics) == 3:
             plt.clf()
@@ -98,7 +98,7 @@ class StatisticsEvaluator:
             plt.xlabel(self.fitness_evaluator.metrics[0])
             plt.ylabel(self.fitness_evaluator.metrics[2])
             # plt.legend(loc='upper right')
-            plt.show()
+            #plt.show()
         #plt.savefig('new_design_space.png')
 
 
@@ -166,9 +166,9 @@ class StatisticsEvaluator:
         else:
             plt.ylabel(self.fitness_evaluator.metrics[1] + "\n" + min_max_y)
         plt.tight_layout()
-        plt.show()
+        # plt.show()
 
-        plt.savefig('design_space.png')
+        # plt.savefig('design_space.png')
 
         # else:
         #     from mpl_toolkits.mplot3d import Axes3D
