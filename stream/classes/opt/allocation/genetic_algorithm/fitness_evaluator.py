@@ -31,6 +31,9 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         operands_to_prefetch,
         scheduling_order=None,
         results_path=None, # Aya
+        memTile_flag=False, # Aya
+        memTile_prefetch_flag=False, # Aya
+        memTile_prefetch_count=4, # Aya
     ) -> None:
         super().__init__(workload, accelerator, node_hw_performances)
 
@@ -46,6 +49,10 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         self.scheduling_order = scheduling_order
 
         self.results_path = results_path
+
+        self.memTile_flag = memTile_flag
+        self.memTile_prefetch_flag = memTile_prefetch_flag 
+        self.memTile_prefetch_count = memTile_prefetch_count
 
     def get_fitness(self, core_allocations: list, return_scme=False):
         """Get the fitness of the given core_allocations
@@ -69,6 +76,9 @@ class StandardFitnessEvaluator(FitnessEvaluator):
             self.operands_to_prefetch,
             self.scheduling_order,
             self.results_path, # Aya
+            self.memTile_flag, # Aya
+            self.memTile_prefetch_flag, # Aya
+            self.memTile_prefetch_count, # Aya
         )
 
         # Aya: originally, this function used to not return anything, but now I made it return the 

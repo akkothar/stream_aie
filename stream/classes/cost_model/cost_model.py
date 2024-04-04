@@ -21,6 +21,9 @@ class StreamCostModelEvaluation:
         #layer_stacks: list,
         scheduling_order: list,  # newly added for supporting broadcasting
         results_path: str,    # Aya
+        memTile_flag: bool, # Aya
+        memTile_prefetch_flag: bool, # Aya 
+        memTile_prefetch_count: int, # Aya
     ) -> None:
         # Initialize the SCME by setting the workload graph to be scheduled
         self.workload = workload
@@ -46,6 +49,10 @@ class StreamCostModelEvaluation:
 
         self.results_path = results_path
 
+        self.memTile_flag = memTile_flag
+        self.memTile_prefetch_flag = memTile_prefetch_flag
+        self.memTile_prefetch_count = memTile_prefetch_count
+
     def __str__(self):
         return f"SCME(energy={self.energy:.2e}, latency={self.latency:.2e})"
 
@@ -61,20 +68,26 @@ class StreamCostModelEvaluation:
         
         dbg_memTile_file = self.results_path+"/dbg_memTile.txt"
 
-        all_tensors = return_all_tensors_of_all_cns(
+        all_tensors, all_tensors_operands = return_all_tensors_of_all_cns(
             self.workload, 
             scheduling_order=self.scheduling_order,
         )
+
+        if self.memTile_prefetch_flag == False:
+            all_tensors = []
+            all_tensors_operands = []
 
         results = schedule_graph(
             self.workload,
             self.accelerator,
             #self.layer_stacks,
             all_tensors,
-            #[],
+            all_tensors_operands,
             tensors_printing_file,
             links_printing_file,
             dbg_memTile_file,
+            memTile_flag=self.memTile_flag,
+            future_tensors_num=self.memTile_prefetch_count,
             #candidate_selection=self.scheduler_candidate_selection,
             operands_to_prefetch=self.operands_to_prefetch,
             scheduling_order=self.scheduling_order,

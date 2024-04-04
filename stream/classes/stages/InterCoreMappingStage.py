@@ -74,6 +74,8 @@ class InterCoreMappingStage(Stage):
         # Aya
         self.aya_dfg = kwargs["aya_dfg"]
         self.memTile_flag = kwargs["memTile_flag"]
+        self.memTile_prefetch_flag = kwargs["memTile_prefetch_flag"]
+        self.memTile_prefetch_count = kwargs["memTile_prefetch_count"]
 
         #self.original_workload = kwargs["original_workload"]
         self.scheduling_order = kwargs.get("scheduling_order", None)
@@ -134,6 +136,9 @@ class InterCoreMappingStage(Stage):
             self.operands_to_prefetch,
             self.scheduling_order,
             self.results_path,
+            self.memTile_flag,
+            self.memTile_prefetch_flag,
+            self.memTile_prefetch_count,
         )
 
         # Extract the length of an individual.

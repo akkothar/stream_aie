@@ -80,7 +80,7 @@ class Accelerator:
             tensor, core, initial_timestep, available_timestep, memory_op
         )
 
-    def remove(self, tensor, core, memory_op, timestep, commitFlag ,links_printing_file, dbg_memTile_file, write_back_to_offchip=False):
+    def remove(self, tensor, core, memory_op, timestep, links_printing_file, dbg_memTile_file, write_back_to_offchip=False):
         """Remove tensor from core. If required, transfer to offchip before removal.
 
         Args:
@@ -118,8 +118,9 @@ class Accelerator:
                 self.offchip_core_id,
                 memory_op,
                 non_evictable_tensors=[],
-                commitFlag=False,  # Aya
+                memTile_flag=False,
                 future_tensors=[], # Aya
+                future_tensors_operands=[], # Aya
                 links_printing_file=links_printing_file,
                 dbg_memTile_file=dbg_memTile_file,
                 sending_core_id=core.id,
@@ -144,7 +145,7 @@ class Accelerator:
         return current_timestep, link_energy_cost, memory_energy_cost
 
     def remove_all(
-        self, core, memory_operand, timestep, commitFlag, links_printing_file, dbg_memTile_file, exceptions=[], write_back_to_offchip=False
+        self, core, memory_operand, timestep, links_printing_file, dbg_memTile_file, exceptions=[], write_back_to_offchip=False
     ):
         """Remove all tensors from a core's memory with the given memory operand.
         If required, the tensors are written back to offchip before removal.
@@ -166,7 +167,7 @@ class Accelerator:
         ):
             if not tensor in exceptions:
                 t, link_energy_cost, memory_energy_cost = self.remove(
-                    tensor, core, memory_operand, t, commitFlag, links_printing_file, dbg_memTile_file, write_back_to_offchip
+                    tensor, core, memory_operand, t, links_printing_file, dbg_memTile_file, write_back_to_offchip
                 )
                 total_link_energy_cost += link_energy_cost
                 total_memory_energy_cost += memory_energy_cost
@@ -178,7 +179,6 @@ class Accelerator:
         core: Core,
         memory_op: str,
         timestep: int,
-        commitFlag: bool, # Aya
         links_printing_file: str,
         dbg_memTile_file: str,
         tensors_to_avoid_evicting: list = [],
@@ -227,7 +227,6 @@ class Accelerator:
                 core,
                 memory_op,
                 timestep,
-                commitFlag,  # Aya
                 links_printing_file,
                 dbg_memTile_file,
                 write_back_to_offchip=True,
@@ -280,11 +279,21 @@ class Accelerator:
             links, evictions_complete_timestep, [tensor,], sender_core, receiving_core
         )
 
+        ################## dbg prints
+        # with open("check_memTile_condition.txt", "a") as ff:
+        #     print("\t The earliest start time is {} and the links start times are:".format(evictions_complete_timestep), file=ff)
+        #     print("Printing all_links: {}".format(all_links_transfer_start_end), file=ff)
+        #     for link in all_links_transfer_start_end:
+        #         for s, e, broadcast_flag in link:
+        #             print("one link start time is {}".format(s), file=ff)
+        ###########################################################
+
         # loop over the start and the end of all of the links connecting the sender (offchip) and receiver, and count the ones of them that have s = evictions_complete_timestep (because this indicates that the link is idle and ready to transfer immediately)
         idle_count = 0
-        for s, e in all_links_transfer_start_end:
-            if s == evictions_complete_timestep:
-                idle_count += 1
+        for link in all_links_transfer_start_end:
+            for s, e, broadcast_flag in link:
+                if s == evictions_complete_timestep:
+                    idle_count += 1
         if idle_count < 2: # this means either there are no available links at all or there is only one link left
             return 2 
         return 0
@@ -296,8 +305,9 @@ class Accelerator:
         receiving_core_id: int,
         tensor_operand: str,
         non_evictable_tensors: list,
-        future_tensors: list,
-        commitFlag: bool, # Aya
+        memTile_flag: bool, # Aya
+        future_tensors: list, # Aya
+        future_tensors_operands: list, # Aya
         links_printing_file: str,  # Aya
         dbg_memTile_file: str, # Aya
         sending_core_id: int = None,
@@ -363,13 +373,13 @@ class Accelerator:
         ################################# STEP 2 #################################
         # The receiver core has enough space to store the tensor.
         enough_space_timestep = self.memory_manager.get_timestep_for_tensor_addition(
-            tensor,    # TODO: find how to send all tensors here!!!
+            tensor,    
             receiving_core_id,
             available_since_timestep,
             memory_op=tensor_operand,
         )
+
         ################################# STEP 3 #################################
-        # TODO: Aya: I assume for now that there is enough space in the receiving core...
         # Make space on the receiving core by evicting tensors if there was never enough space.
         (
             evictions_complete_timestep,
@@ -381,7 +391,6 @@ class Accelerator:
             core=receiving_core,
             memory_op=tensor_operand,
             timestep=enough_space_timestep,
-            commitFlag=commitFlag,  #Aya
             links_printing_file=links_printing_file,
             tensors_to_avoid_evicting=non_evictable_tensors,
         )
@@ -397,7 +406,6 @@ class Accelerator:
         came_from_offchip = sender_core.id == self.offchip_core_id
 
         ######### Aya: added the following heuristic to decide when the tool should explore the usage of memTile and when it should not
-                # TODO currently, I assume that the memTile will have enough space for the tensor. If not, then we need to add the above logic of "make_space_for" this tensor on the memTile
         use_memTile_flag_status = 0
         memTile_core = []
         if came_from_offchip:
@@ -417,8 +425,7 @@ class Accelerator:
                 # 0: indicating that we have enough offchip channels 
                 # 1: indicating that the data is already present in the memTile and we should directly tansfer it from there
                 # 2: indicating that the data is not present in the memTile and there is only one available offchip channel, so do offchip -> memTile then memTile -> core 
-            use_memTile_flag_status = self.memTile_heuristic(memTile_core, True, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep)
-
+            use_memTile_flag_status = self.memTile_heuristic(memTile_core, memTile_flag, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep)
 
         if use_memTile_flag_status == 1: 
             actual_sender_core = memTile_core
@@ -445,7 +452,38 @@ class Accelerator:
         links = links_nested
 
         if use_memTile_flag_status == 2 and len(future_tensors) > 0:
-        # Aya: Pass the list of future_tensors instead of the single tensor
+            # Aya: since we will transfer through the memTile and we will prefetch multiple tensors, 
+                # we need to calculate the time needed to add those future tensors
+            future_tensors_without_current_tensor = future_tensors
+            future_tensors_without_current_tensor.remove(tensor) # remove the current tensor because we have already called the next two functions for it above
+            future_tensors_operands_without_current_tensor = future_tensors_operands
+            future_tensors_operands_without_current_tensor.remove(tensor_operand)
+
+            for tens, tens_operand in zip(future_tensors_without_current_tensor, future_tensors_operands_without_current_tensor): 
+                enough_space_timestep = evictions_complete_timestep
+                enough_space_timestep = self.memory_manager.get_timestep_for_tensor_addition(
+                    tens,
+                    actual_receiving_core.id,
+                    enough_space_timestep,
+                    memory_op=tens_operand,  
+                )
+            
+                (
+                    evictions_complete_timestep,
+                    eviction_link_energy_cost,
+                    eviction_memory_energy_cost,
+                ) = self.make_space_for(
+                    dbg_memTile_file=dbg_memTile_file,
+                    tensor=tens,
+                    core=actual_receiving_core,
+                    memory_op=tens_operand,  
+                    timestep=enough_space_timestep,
+                    links_printing_file=links_printing_file,
+                    tensors_to_avoid_evicting=non_evictable_tensors,
+                )
+            ##########################
+
+        # Aya: Pass the list of future_tensors instead of the single tensor to prefetch multiple tensors to the memTile
             transfer_start, transfer_duration, chosen_links, all_links_transfer_start_end = self.communication_manager.get_links_idle_window(
                 links, evictions_complete_timestep, future_tensors, actual_sender_core, actual_receiving_core
             ) # [tensor,]
@@ -517,7 +555,6 @@ class Accelerator:
                     actual_sender_core,
                     tensor.memory_operand,
                     transfer_end,
-                    commitFlag, # Aya
                     links_printing_file,
                     dbg_memTile_file,
                     write_back_to_offchip=False,

@@ -312,6 +312,8 @@ class CommunicationManager:
         best_idle_intersections.append((sys.maxsize, sys.maxsize))
         best_duration = sys.maxsize
 
+        all_idle_intersections = []
+
         total_tensors_size = 0
         for t in tensors:
             total_tensors_size += t.size
@@ -332,6 +334,9 @@ class CommunicationManager:
                             period for period in idle_intersections
                             if period[1] - period[0] >= duration
                         ]
+
+                all_idle_intersections.append(idle_intersections) # Aya: contains a copy of all intersections of every path
+                
                 # Aya: added this to define a rule for deciding which path to choose
                         # Aya: I'm doing it after the loop since the above loop is meant to go through the multiple links inside one path, in case the cores are not directly connected 
                 if windows[0][2] is True:
@@ -351,6 +356,9 @@ class CommunicationManager:
                 req_bw = min(req_bw, link.bandwidth)  # ceil the bw
                 windows = link.get_idle_window(req_bw, duration, best_case_start, tensors, sender, receiver)
                 idle_intersections = windows
+
+                all_idle_intersections.append(idle_intersections) # Aya: contains a copy of all intersections of every path
+
                 # Aya: added this to define a rule for deciding which 
                 if windows[0][2] is True:
                     best_idle_intersections = idle_intersections
@@ -366,7 +374,7 @@ class CommunicationManager:
         if isinstance(best_link, dict):
             best_link = list(best_link.keys())
 
-        return best_idle_intersections[0][0], best_duration, best_link, best_idle_intersections
+        return best_idle_intersections[0][0], best_duration, best_link, all_idle_intersections
 
         # Aya: The following commented code was there before adding support for multiple parallel links between cores
         # idle_intersections = []

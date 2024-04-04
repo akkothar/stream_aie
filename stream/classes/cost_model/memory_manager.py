@@ -227,15 +227,20 @@ class MemoryManager:
         top_level_idx = self.get_top_level_idx(core, memory_op)
         top_instance = self.top_instances[core][top_level_idx]
         top_instance_capacity = self.top_instance_capacities[top_instance]
+
         all_timesteps = self.top_instance_stored_cumsum[top_instance][:, 0]
         all_usages = self.top_instance_stored_cumsum[top_instance][:, 1]
+
         relevant_start_idx = np.searchsorted(all_timesteps, timestep, 'right') - 1
+
         if relevant_start_idx == len(all_timesteps):
             return timestep
+        
         relevant_timesteps = all_timesteps[relevant_start_idx:]
         relevant_usages = all_usages[relevant_start_idx:]
         relevant_usages_reversed = relevant_usages[::-1]
         max_usage = np.max(relevant_usages_reversed)
+
         last_max_usage_idx = (
             len(relevant_usages_reversed) - np.argmax(relevant_usages_reversed) - 1
         )
@@ -243,12 +248,16 @@ class MemoryManager:
         if max_usage + tensor.size <= top_instance_capacity:
             can_add_from_timestep = timestep
             return can_add_from_timestep
+        
         if last_max_usage_idx == len(relevant_usages_reversed) - 1:
             return relevant_timesteps[last_max_usage_idx]
+        
         new_timestep = relevant_timesteps[last_max_usage_idx + 1]
+
         return self.get_timestep_for_tensor_addition(
             tensor, core_id, new_timestep, memory_op
         )
+
 
     def generate_all_combinations(self, lst):
         for i in range(1, len(lst) + 1):
