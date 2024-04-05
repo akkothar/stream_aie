@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Tensor:
     """Class to represent a data tensor.
     TODO: Add from which layer this tensor originates and its dimension ranges
@@ -77,7 +80,7 @@ class Tensor:
             )
             return not_storing_priority
 
-    def initialize_instance_priorities(self, G, node, accelerator):
+    def initialize_instance_priorities(self, G, node, accelerator, memTile_flag, memTile_core):
         if self.layer_operand == node.output_operand:
             out_edges = [
                 (succ, d)
@@ -93,12 +96,29 @@ class Tensor:
                     self.instance_priorities[top_instance] += 1
                 else:  # first time we see this instance
                     self.instance_priorities[top_instance] = 1
+                
+                ###############################################
+                # Aya
+                if memTile_flag is True:
+                    memTile_top_instance = memTile_core.get_top_memory_instance(memory_operand)
+                    if memTile_top_instance in self.instance_priorities:
+                        self.instance_priorities[memTile_top_instance] += 1
+                    else:  # first time we see this instance
+                        self.instance_priorities[memTile_top_instance] = 1
+                ###############################################
 
         else:
             core = accelerator.get_core(node.core_allocation)
             memory_operand = self.memory_operand
             top_instance = core.get_top_memory_instance(memory_operand)
             self.instance_priorities[top_instance] = self.base_priority
+
+            ###############################################
+            # Aya
+            if memTile_flag is True:
+                memTile_top_instance = memTile_core.get_top_memory_instance(memory_operand)
+                self.instance_priorities[memTile_top_instance] = self.base_priority
+                ###############################################
 
     def get_total_priority(self):
         return sum(self.instance_priorities.values())

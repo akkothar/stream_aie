@@ -448,7 +448,6 @@ class IntraCoreMappingStage(Stage):
             for one_core in self.accelerator.cores:
                 if one_core.id is not self.accelerator.offchip_core_id:
                     cores_without_offchip.append(one_core)
-
             accelerator_cores_array = np.asarray(cores_without_offchip).reshape((self.accelerator.nb_rows, self.accelerator.nb_cols), order="C")
             for col in accelerator_cores_array.T:
                 if core in col:

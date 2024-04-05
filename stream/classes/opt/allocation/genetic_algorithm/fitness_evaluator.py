@@ -34,6 +34,7 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         memTile_flag=False, # Aya
         memTile_prefetch_flag=False, # Aya
         memTile_prefetch_count=4, # Aya
+        memTile_eviction_flag=False, # Aya
     ) -> None:
         super().__init__(workload, accelerator, node_hw_performances)
 
@@ -53,6 +54,7 @@ class StandardFitnessEvaluator(FitnessEvaluator):
         self.memTile_flag = memTile_flag
         self.memTile_prefetch_flag = memTile_prefetch_flag 
         self.memTile_prefetch_count = memTile_prefetch_count
+        self.memTile_eviction_flag = memTile_eviction_flag
 
     def get_fitness(self, core_allocations: list, return_scme=False):
         """Get the fitness of the given core_allocations
@@ -79,6 +81,7 @@ class StandardFitnessEvaluator(FitnessEvaluator):
             self.memTile_flag, # Aya
             self.memTile_prefetch_flag, # Aya
             self.memTile_prefetch_count, # Aya
+            self.memTile_eviction_flag, # Aya
         )
 
         # Aya: originally, this function used to not return anything, but now I made it return the 

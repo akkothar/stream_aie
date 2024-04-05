@@ -248,7 +248,7 @@ class Accelerator:
         print("The link {} has active_ts = {}, active_deltas = {}, and tensors = {}".format(chosen_link, chosen_link.active_ts, chosen_link.active_deltas, chosen_link.tensors), file=printing_file)
 
     
-     # Aya: use_memTile_flag_status can be one of three values: 
+    # Aya: use_memTile_flag_status can be one of three values: 
                 # 0: indicating that we have enough offchip channels 
                 # 1: indicating that the data is already present in the memTile and we should directly tansfer it from there
                 # 2: indicating that the data is not present in the memTile and there is only one available offchip channel, so do offchip -> memTile then memTile -> core 

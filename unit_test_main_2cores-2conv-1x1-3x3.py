@@ -103,6 +103,7 @@ mainstage = MainStage(
     memTile_flag=True,
     memTile_prefetch_flag=True,
     memTile_prefetch_count=4,
+    memTile_eviction_flag=False,
 )
 
 # Launch the MainStage

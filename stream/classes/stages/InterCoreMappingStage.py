@@ -77,6 +77,8 @@ class InterCoreMappingStage(Stage):
         self.memTile_prefetch_flag = kwargs["memTile_prefetch_flag"]
         self.memTile_prefetch_count = kwargs["memTile_prefetch_count"]
 
+        self.memTile_eviction_flag = kwargs["memTile_eviction_flag"]
+
         #self.original_workload = kwargs["original_workload"]
         self.scheduling_order = kwargs.get("scheduling_order", None)
 
@@ -139,6 +141,7 @@ class InterCoreMappingStage(Stage):
             self.memTile_flag,
             self.memTile_prefetch_flag,
             self.memTile_prefetch_count,
+            self.memTile_eviction_flag,
         )
 
         # Extract the length of an individual.
