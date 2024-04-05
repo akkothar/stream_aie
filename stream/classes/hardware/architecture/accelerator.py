@@ -121,6 +121,7 @@ class Accelerator:
                 memTile_flag=False,
                 future_tensors=[], # Aya
                 future_tensors_operands=[], # Aya
+                all_future_tensors=[], # Aya
                 links_printing_file=links_printing_file,
                 dbg_memTile_file=dbg_memTile_file,
                 sending_core_id=core.id,
@@ -308,6 +309,7 @@ class Accelerator:
         memTile_flag: bool, # Aya
         future_tensors: list, # Aya
         future_tensors_operands: list, # Aya
+        all_future_tensors: list, # Aya: needed in case of necessary evictions
         links_printing_file: str,  # Aya
         dbg_memTile_file: str, # Aya
         sending_core_id: int = None,
@@ -454,20 +456,17 @@ class Accelerator:
         if use_memTile_flag_status == 2 and len(future_tensors) > 0:
             # Aya: since we will transfer through the memTile and we will prefetch multiple tensors, 
                 # we need to calculate the time needed to add those future tensors
-            future_tensors_without_current_tensor = future_tensors
-            future_tensors_without_current_tensor.remove(tensor) # remove the current tensor because we have already called the next two functions for it above
-            future_tensors_operands_without_current_tensor = future_tensors_operands
-            future_tensors_operands_without_current_tensor.remove(tensor_operand)
-
-            for tens, tens_operand in zip(future_tensors_without_current_tensor, future_tensors_operands_without_current_tensor): 
-                enough_space_timestep = evictions_complete_timestep
+            for tens, tens_operand in zip(future_tensors, future_tensors_operands): 
+                temp_time_step = evictions_complete_timestep
                 enough_space_timestep = self.memory_manager.get_timestep_for_tensor_addition(
                     tens,
                     actual_receiving_core.id,
-                    enough_space_timestep,
+                    temp_time_step,
                     memory_op=tens_operand,  
                 )
-            
+               
+                #tensors_to_avoid_eviction = list(set().union(future_tensors, list(non_evictable_tensors)))
+                tensors_to_avoid_eviction = all_future_tensors[all_future_tensors.index(future_tensors[0]): len(future_tensors) + 16]
                 (
                     evictions_complete_timestep,
                     eviction_link_energy_cost,
@@ -479,7 +478,7 @@ class Accelerator:
                     memory_op=tens_operand,  
                     timestep=enough_space_timestep,
                     links_printing_file=links_printing_file,
-                    tensors_to_avoid_evicting=non_evictable_tensors,
+                    tensors_to_avoid_evicting=tensors_to_avoid_eviction,  # Aya: TODO: What is the best thing to pass here...
                 )
             ##########################
 

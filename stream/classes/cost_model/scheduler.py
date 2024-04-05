@@ -67,7 +67,7 @@ def prefetch_constant_operands(
                         eviction_memory_energy_cost,
                         came_from_offchip,
                     ) = accelerator.transfer_tensor_to_core(
-                        tensor, core_allocation, memory_op, [], memTile_flag, [], [], False, links_printing_file, dbg_memTile_file,
+                        tensor, core_allocation, memory_op, [], memTile_flag, [], [], [], links_printing_file, dbg_memTile_file,
                     )
                     assert came_from_offchip
                     total_cn_offchip_link_energy += transfer_link_energy_cost
@@ -509,8 +509,9 @@ def schedule_graph(
                 tensor_operand,
                 tensors_this_candidate_needs,
                 memTile_flag,  # Aya: if True, explore the memTile. If False, ignore the memTile completely
-                future_tensors,
-                future_tensors_operands,
+                future_tensors, # Aya
+                future_tensors_operands, # Aya
+                all_tensors, # Aya
                 links_printing_file, # Aya
                 dbg_memTile_file, # Aya
             )
@@ -544,6 +545,7 @@ def schedule_graph(
                     memTile_flag,
                     [], # Aya: I do not need to pass any future_tensors to the second call of transfer_tensor_to_core
                     [], # Aya: I do not need to pass any future_tensors_operands to the second call of transfer_tensor_to_core
+                    [], # Aya: I do not need to pass all_tensors to the second call of transfer_tensor_to_core
                     links_printing_file, # Aya
                     dbg_memTile_file, # Aya
                     # specify the sender_core_id
