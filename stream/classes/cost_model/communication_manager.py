@@ -217,6 +217,15 @@ class CommunicationManager:
             )
             for link in links
         ]
+
+        ################## dbg prints
+        with open("check_cles.txt", "a") as ff:
+            print("*************************", file=ff)
+            print(links, file=ff)
+            print(cles, file=ff)
+            print("*************************", file=ff)
+        ###########################################################
+
         event = CommunicationEvent(
             id=self.event_id,
             tasks=cles,

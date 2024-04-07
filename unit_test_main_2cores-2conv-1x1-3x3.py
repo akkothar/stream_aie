@@ -101,9 +101,9 @@ mainstage = MainStage(
     split_W_percentage=split_W_percentage,
     results_path=results_path, # Aya: added this to define the path to the results
     memTile_flag=True,
-    memTile_prefetch_flag=True,
-    memTile_prefetch_count=4,
-    memTile_eviction_flag=False,
+    memTile_prefetch_flag=False, # True
+    memTile_prefetch_count=0, # 4
+    memTile_eviction_flag=True,
 )
 
 # Launch the MainStage

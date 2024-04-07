@@ -281,12 +281,12 @@ class Accelerator:
         )
 
         ################## dbg prints
-        # with open("check_memTile_condition.txt", "a") as ff:
-        #     print("\t The earliest start time is {} and the links start times are:".format(evictions_complete_timestep), file=ff)
-        #     print("Printing all_links: {}".format(all_links_transfer_start_end), file=ff)
-        #     for link in all_links_transfer_start_end:
-        #         for s, e, broadcast_flag in link:
-        #             print("one link start time is {}".format(s), file=ff)
+        with open("check_memTile_condition.txt", "a") as ff:
+            print("\t The earliest start time is {} and the links start times are:".format(evictions_complete_timestep), file=ff)
+            print("Printing all_links: {}".format(all_links_transfer_start_end), file=ff)
+            for link in all_links_transfer_start_end:
+                for s, e, broadcast_flag in link:
+                    print("one link start time is {}".format(s), file=ff)
         ###########################################################
 
         # loop over the start and the end of all of the links connecting the sender (offchip) and receiver, and count the ones of them that have s = evictions_complete_timestep (because this indicates that the link is idle and ready to transfer immediately)

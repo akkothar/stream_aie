@@ -162,10 +162,10 @@ class CommunicationLink:
         """
         valid_windows = []
 
-        is_broadcast_flag = False  # Aya: added a flag to be appended in valid_windows to be True if we are broadcasting
         ## Check if this tensor has already been transferred on this link before
         # If so, check duration and earliest timestep requirements of this call
         for tensor in tensors:
+            is_broadcast_flag = False  # Aya: added a flag to be appended in valid_windows to be True if we are broadcasting
             if tensor in self.tensors:
                 previous_events = self.tensors[tensor]
                 for previous_event in previous_events:
@@ -194,6 +194,9 @@ class CommunicationLink:
             # compare the sender and receiver of this event to the new ones that we are currently checking the idle_window for
             if event.sender == new_sender or event.receiver == new_receiver:
                 link_is_free = False
+
+        # Aya: Temporarily disabling the spatial separation support
+        link_is_free = False
 
         if link_is_free:
             # issue the transfer immediately
