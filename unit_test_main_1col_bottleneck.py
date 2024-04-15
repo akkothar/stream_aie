@@ -1,3 +1,11 @@
+# This file is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+ 
+#
+# Copyright (C) 2024, Advanced Micro Devices, Inc.
+#
+#===----------------------------------------------------------------------===
+
 from zigzag.classes.stages import *
 from stream.classes.stages import *
 from stream.visualization.schedule import (
@@ -25,17 +33,17 @@ _logging.basicConfig(level=_logging_level, format=_logging_format)
 
 #################################
 accelerator = "unit_tests_accelerators.one_col_accelerator"
-workload_path = "unit_tests_workloads/one_bottleneck_with_bias.onnx"
+workload_path = "unit_tests_workloads/one_bottleneck_no_bias_yes_relu_no_skip.onnx"
 mapping_path = "unit_tests_accelerators.one_col_mapping"
 
 # Aya: added this to customize the path to the output
-example_name = "one-col-bottleneck"
+example_name = "Split-0.4-yes-MemTile-one-col-bottleneck-no_bias_yes_relu_no_skip"
 results_path = "unit_tests_results/" + example_name
 
 # Parameters determining the granularity of the layers splitting
 CN_define_mode = 4 # automatically split layers if too big to fit: # manually define outer CN size for all cores and all layers
-split_W_percentage = 0.5 # max percentage of capacity a single node's weights can be
-hint_loops = [("OY", 10)] # outer CN loops, with error in resnet18 plotting
+split_W_percentage = 0.4 # max percentage of capacity a single node's weights can be
+hint_loops = [("OY", "all")] # outer CN loops, with error in resnet18 plotting
 
 nb_ga_individuals = 16  # number of individuals in each generation
 nb_ga_generations = 16  # number of genetic algorithm generations
@@ -99,10 +107,10 @@ mainstage = MainStage(
     operands_to_prefetch=[],
     split_W_percentage=split_W_percentage,
     results_path=results_path, # Aya: added this to define the path to the results
-    memTile_flag = False,  # Aya: added this to make it easy to add or remove memTiles
-    memTile_prefetch_flag=False,
+    memTile_flag=True,  # Aya: added this to make it easy to add or remove memTiles
+    memTile_prefetch_flag=True,
     memTile_prefetch_count=4,
-    memTile_eviction_flag=False,
+    memTile_eviction_flag=True,
 )
 
 # Launch the MainStage

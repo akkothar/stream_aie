@@ -17,7 +17,7 @@ def initialize_priorities(G: DiGraph, accelerator: Accelerator, memTile_flag: bo
     mem_tile_core = []
     for n in G.nodes():
         for op, tensor in n.operand_tensors.items():
-            # identify the memTile core in the column of the core under study
+            # Aya: if the memTile_flag is True, retrieve the memTile core in the same column as that of the core that this node is allocated to so that we add a priority to this tensor mapped to this memTile core 
             if memTile_flag is True:
                 cores_without_offchip = []
                 for one_core in accelerator.cores:
@@ -30,6 +30,7 @@ def initialize_priorities(G: DiGraph, accelerator: Accelerator, memTile_flag: bo
                         for one_core in col:
                             if(one_core.core_type == 1):
                                 mem_tile_core = one_core
+                            
             tensor.initialize_instance_priorities(G, n, accelerator, memTile_flag, mem_tile_core)  # Aya: extended the function to initialize priorities for the memory instance of the memTile if the memTile flag is True
 
 
@@ -218,7 +219,7 @@ def decrease_priority(
     accelerator: Accelerator,
     node: ComputationNode,
     used_memTile_flag: bool,
-    mem_tile_core: Core,
+    mem_tile_core: Core,   # Aya: the memTile in the same column as that of the core currently under study
 ):
     for tensor_used_by_node, tensor_memory_operand in zip(tensors, tensors_operands):
         # TODO: tensor_memory_operand will be 'O' for activation tensors.
@@ -229,7 +230,6 @@ def decrease_priority(
         tensor_used_by_node.instance_priorities[top_instance] -= 1
         # Aya
         #########################################################
-        # identify the memTile core in the column of the core under study
         if used_memTile_flag:
             memTile_top_instance = accelerator.get_top_instance_of_core(
                 mem_tile_core, tensor_memory_operand
@@ -244,7 +244,6 @@ def check_for_removal(
     node: ComputationNode,
     G: DiGraph,
     timestep: int,
-    used_memTile_flag: bool, # Aya
     links_printing_file: str, # Aya
     dbg_memTile_file: str,  # Aya
 ):
@@ -257,6 +256,7 @@ def check_for_removal(
             ) = accelerator.memory_manager.find_tensor_in_top_instances(
                 tensor_used_by_node
             )
+            # Aya: this will naturally return also the memTile if it contains this tensor
             for instance_storing_tensor in instances_storing_tensor:
                 core_ids_of_instance = [
                     core.id
@@ -311,7 +311,18 @@ def return_all_tensors_of_all_cns(
     G: DiGraph,
     scheduling_order=None,
 ):
-    # List that keeps all possible candidate nodes for each core.
+    #######################################
+    # all_tensors = []
+    # all_tensors_operands = []
+    # for n in G.nodes():
+    #     for op, tensor in n.operand_tensors.items():
+    #         if op in n.constant_operands: # or tensor in n.too_large_operands:
+    #             all_tensors.append(tensor)
+    #             all_tensors.append(tensor.layer_operand)
+
+    #######################################
+
+    #List that keeps all possible candidate nodes for each core.
     candidates = []
     all_tensors = []
     all_tensors_operands = []
@@ -341,9 +352,11 @@ def return_all_tensors_of_all_cns(
         for tensor, tensor_operand in zip(
             tensors_this_candidate_needs, tensors_operands
         ):
+            #if tensor.layer_operand in best_candidate.constant_operands:
+                # or tensor.layer_operand in best_candidate.too_large_operands:
             all_tensors.append(tensor)
             all_tensors_operands.append(tensor_operand)
-            
+
         # Add this node to the scheduled nodes
         scheduled_nodes.add(best_candidate)
 
@@ -586,7 +599,7 @@ def schedule_graph(
             timestep = max(timestep, transfer_complete_timestep_2)
 
             with open("check_memTile_transfer_end.txt", "a") as ff:
-                print("The value of came_from_offchip_1 is {} and came_from_offchip_2 is {} and the value of use_memTile_flag_status is {} and use_memTile_flag_status_2 is {} and the transfer_complete_timestep is {} and the transfer_complete_timestep_2 is {} and the sum timestep is {}".format(came_from_offchip, came_from_offchip_2, use_memTile_flag_status, use_memTile_flag_status_2, transfer_complete_timestep, transfer_complete_timestep_2, timestep), file=ff)
+                print("The value of came_from_offchip_1 is {} and the value of use_memTile_flag_status is {} and the transfer_complete_timestep is {} and the sum timestep is {}".format(came_from_offchip, use_memTile_flag_status, transfer_complete_timestep, timestep), file=ff)
 
             # Aya
             dbg_tensors_transfer_details.append((came_from_offchip, False, core_id, timestep, tensor_operand, tensor, best_candidate))
@@ -674,7 +687,7 @@ def schedule_graph(
         # Decrease the priority of all the tensors this node used
         if memTile_eviction_flag:
             # Aya: decrease priority of this tensor on the memTile instance if the tensor is inside the memTile
-            # retrieve the memTile core that is in the column of the core under study
+            # retrieve the memTile core that is in the column of the core under study and decrease priority only if the tensor is really inside it...
             cores_without_offchip = []
             for one_core in accelerator.cores:
                 if one_core.id is not accelerator.offchip_core_id:
@@ -703,7 +716,6 @@ def schedule_graph(
             tensors_this_candidate_needs, tensors_operands, accelerator, best_candidate, used_memTile_flag, mem_tile_core
         )
 
-        # Aya: TODO: update this function to remove from the memTile as well..
         # Remove the tensor if the priority is zero
         check_for_removal(
             tensors_this_candidate_needs,
@@ -711,11 +723,9 @@ def schedule_graph(
             best_candidate,
             G,
             end,
-            used_memTile_flag, # Aya
             links_printing_file, # Aya
             dbg_memTile_file, # Aya
         )
-
 
         ## Step 7
         # Memory usage: When the node ends:

@@ -301,7 +301,7 @@ class CommunicationManager:
 
 
     def get_links_idle_window(
-        self, links: list, best_case_start: int, tensors: list, sender: Core, receiver: Core, duration: int=None,
+        self, links: list, best_case_start: int, tensors: list, sender: Core, receiver: Core, duration: int=None, print_dbg_flag=False,
     ) -> int:
         """Return the timestep at which tensor can be transfered across the links.
         Both links must have an idle window large enough for the transfer.
@@ -335,6 +335,7 @@ class CommunicationManager:
                 for i, (link, req_bw) in enumerate(path.items()):
                     req_bw = min(req_bw, link.bandwidth)  # ceil the bw
                     windows = link.get_idle_window(req_bw, duration, best_case_start, tensors, sender, receiver)
+                    
                     if i == 0:
                         idle_intersections = windows
                     else:
@@ -343,12 +344,12 @@ class CommunicationManager:
                             period for period in idle_intersections
                             if period[1] - period[0] >= duration
                         ]
-
-                all_idle_intersections.append(idle_intersections) # Aya: contains a copy of all intersections of every path
+                
+                all_idle_intersections.append(idle_intersections[0][0]) # Aya: contains a copy of all intersections of every path
                 
                 # Aya: added this to define a rule for deciding which path to choose
                         # Aya: I'm doing it after the loop since the above loop is meant to go through the multiple links inside one path, in case the cores are not directly connected 
-                if windows[0][2] is True:
+                if windows[0][2] is True:   # favor broadcasting
                     best_idle_intersections = idle_intersections
                     best_duration = duration
                     best_link = path
@@ -366,7 +367,7 @@ class CommunicationManager:
                 windows = link.get_idle_window(req_bw, duration, best_case_start, tensors, sender, receiver)
                 idle_intersections = windows
 
-                all_idle_intersections.append(idle_intersections) # Aya: contains a copy of all intersections of every path
+                all_idle_intersections.append(idle_intersections[0][0]) # Aya: contains a copy of all intersections of every path
 
                 # Aya: added this to define a rule for deciding which 
                 if windows[0][2] is True:

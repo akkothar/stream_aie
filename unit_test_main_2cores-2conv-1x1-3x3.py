@@ -1,3 +1,11 @@
+# This file is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+ 
+#
+# Copyright (C) 2024, Advanced Micro Devices, Inc.
+#
+#===----------------------------------------------------------------------===
+
 from zigzag.classes.stages import *
 from stream.classes.stages import *
 from stream.visualization.schedule import (
@@ -101,8 +109,8 @@ mainstage = MainStage(
     split_W_percentage=split_W_percentage,
     results_path=results_path, # Aya: added this to define the path to the results
     memTile_flag=True,
-    memTile_prefetch_flag=False, # True
-    memTile_prefetch_count=0, # 4
+    memTile_prefetch_flag=True,
+    memTile_prefetch_count=4,
     memTile_eviction_flag=True,
 )
 

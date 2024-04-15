@@ -1,3 +1,11 @@
+# This file is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+ 
+#
+# Copyright (C) 2024, Advanced Micro Devices, Inc.
+#
+#===----------------------------------------------------------------------===//
+
 from zigzag.classes.hardware.architecture.memory_hierarchy import MemoryHierarchy
 from zigzag.classes.hardware.architecture.operational_unit import Multiplier
 from zigzag.classes.hardware.architecture.operational_array import MultiplierArray

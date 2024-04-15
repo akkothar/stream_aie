@@ -164,19 +164,20 @@ class CommunicationLink:
 
         ## Check if this tensor has already been transferred on this link before
         # If so, check duration and earliest timestep requirements of this call
-        for tensor in tensors:
-            is_broadcast_flag = False  # Aya: added a flag to be appended in valid_windows to be True if we are broadcasting
-            if tensor in self.tensors:
-                previous_events = self.tensors[tensor]
-                for previous_event in previous_events:
-                    # Previous event needs to be long enough
-                    duration_valid = previous_event.duration >= duration
-                    # Previous event needs to have happened at late enough time
-                    earliest_t_valid = previous_event.start >= earliest_t
-                    if duration_valid and earliest_t_valid:
-                        is_broadcast_flag = True
-                        valid_windows.append((previous_event.start, previous_event.end, is_broadcast_flag))
-        
+        if len(tensors) == 1:   # Aya: if there are more than one tensors, then they must be the future_tensors we are prefetching to the memTile and in this case we do not want to broadcast
+            for tensor in tensors:
+                is_broadcast_flag = False  # Aya: added a flag to be appended in valid_windows to be True if we are broadcasting
+                if tensor in self.tensors:
+                    previous_events = self.tensors[tensor]
+                    for previous_event in previous_events:
+                        # Previous event needs to be long enough
+                        duration_valid = previous_event.duration >= duration
+                        # Previous event needs to have happened at late enough time
+                        earliest_t_valid = previous_event.start >= earliest_t
+                        if duration_valid and earliest_t_valid:
+                            is_broadcast_flag = True
+                            valid_windows.append((previous_event.start, previous_event.end, is_broadcast_flag))
+            
         ################# Aya's edits to add support for the spatial separation of links
         # Aya: loop over the events field and check the sender and receiver of each event (if it is overlapping)
             # Aya: if the sender and receiver of all overlapping events are different from the current sender and receiver that we are trying to schedule a transfer for then start as soon as possible
@@ -194,9 +195,6 @@ class CommunicationLink:
             # compare the sender and receiver of this event to the new ones that we are currently checking the idle_window for
             if event.sender == new_sender or event.receiver == new_receiver:
                 link_is_free = False
-
-        # Aya: Temporarily disabling the spatial separation support
-        link_is_free = False
 
         if link_is_free:
             # issue the transfer immediately

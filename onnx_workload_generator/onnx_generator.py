@@ -22,33 +22,37 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Using device {device}')
 
-    model = conv1_pytorch.conv1_workload() #UNet(n_channels=3, n_classes=args.classes, bilinear=args.bilinear)
-        
+    model = conv1_pytorch.conv1_workload() 
+    
     model.to(device=device)
+    #dummy_input=torch.randn(1,256, 112, 112).to(device)  
     dummy_input=torch.randn(1,256, 112, 112).to(device)  
+
     #dummy_input=torch.randn(1,512, 112, 112).to(device)  
+
+    #dummy_input=torch.randn(1,3, 112, 112).to(device)
 
     # x = torch.randn(batch_size, 1, 224, 224, requires_grad=True)
 
     # Export the model
     torch.onnx.export(model.eval(),               # model being run
                     dummy_input,                         # model input (or a tuple for multiple inputs)
-                    "conv1_1x1_workload.onnx", #"UNet_bottleneck_full_reduction_4_inchannel_3_without_bias.onnx",   # where to save the model (can be a file or file-like object)
+                    "one_bottleneck_no_bias_yes_relu_yes_skip.onnx", #"UNet_bottleneck_full_reduction_4_inchannel_3_without_bias.onnx",   # where to save the model (can be a file or file-like object)
                     export_params=True,        # store the trained parameter weights inside the model file
                     opset_version=10,          # the ONNX version to export the model to
                     do_constant_folding=True,  # whether to execute constant folding for optimization
                     input_names = ['input'],   # the model's input names
                     output_names = ['output'], # the model's output names
                     )
-    model = onnx.load('conv1_1x1_workload.onnx') #('UNet_bottleneck_full_reduction_4_inchannel_3_without_bias.onnx')
+    model = onnx.load('one_bottleneck_no_bias_yes_relu_yes_skip.onnx') #('UNet_bottleneck_full_reduction_4_inchannel_3_without_bias.onnx')
     onnx.save_model(model, 
-                    'conv1_1x1_workload.onnx', #'UNet_bottleneck_full_reduction_4_inchannel_3_without_bias_save.onnx', 
+                    'one_bottleneck_no_bias_yes_relu_yes_skip.onnx', #'UNet_bottleneck_full_reduction_4_inchannel_3_without_bias_save.onnx', 
                     save_as_external_data=True, 
                     all_tensors_to_one_file=True,
                     location='external_data_filename', 
                     size_threshold=1024, 
                     convert_attribute=False)
     
-    model = onnx.load('conv1_1x1_workload.onnx') #("UNet_bottleneck_full_reduction_4_inchannel_3_without_bias_save.onnx")
+    model = onnx.load('one_bottleneck_no_bias_yes_relu_yes_skip.onnx') #("UNet_bottleneck_full_reduction_4_inchannel_3_without_bias_save.onnx")
     inferred_model = shape_inference.infer_shapes(model)
-    onnx.save(inferred_model, "conv1_1x1_workload.onnx") #"UNet_bottleneck_full_reduction_4_inchannel_3_without_bias_save_infer.onnx")
+    onnx.save(inferred_model, "one_bottleneck_no_bias_yes_relu_yes_skip.onnx") #"UNet_bottleneck_full_reduction_4_inchannel_3_without_bias_save_infer.onnx")

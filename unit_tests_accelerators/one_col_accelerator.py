@@ -1,11 +1,19 @@
+# This file is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+ 
+#
+# Copyright (C) 2024, Advanced Micro Devices, Inc.
+#
+#===----------------------------------------------------------------------===//
+
 from unit_tests_accelerators.aie_core1 import (
     get_core as one_aie_core,
 )
-from stream.inputs.aie.hardware.shim_dma_core import (
+from unit_tests_accelerators.shim_dma_core import (
     get_shim_dma_core as shim_core
 )
 
-from stream.inputs.aie.hardware.mem_tile import (
+from unit_tests_accelerators.mem_tile import (
     get_memTile_core as mem_tile,
 )
 

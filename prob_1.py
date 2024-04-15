@@ -1,3 +1,11 @@
+# This file is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+ 
+#
+# Copyright (C) 2024, Advanced Micro Devices, Inc.
+#
+#===----------------------------------------------------------------------===
+
 # The memory needed to fit weights is greater than the total L1 memory capacity of the cores because we are not enabling splitting
 
 from zigzag.classes.stages import *

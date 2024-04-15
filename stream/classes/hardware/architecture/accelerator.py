@@ -276,26 +276,27 @@ class Accelerator:
         # links = {link: link.bandwidth for link in links} # added for broadcasting
         links = links_nested
 
-        transfer_start, transfer_duration, chosen_links, all_links_transfer_start_end = self.communication_manager.get_links_idle_window(
-            links, evictions_complete_timestep, [tensor,], sender_core, receiving_core
+        transfer_start, transfer_duration, chosen_links, all_links_transfer_start = self.communication_manager.get_links_idle_window(
+            links, evictions_complete_timestep, [tensor,], sender_core, receiving_core, None, True
         )
 
         ################## dbg prints
         with open("check_memTile_condition.txt", "a") as ff:
-            print("\t The earliest start time is {} and the links start times are:".format(evictions_complete_timestep), file=ff)
-            print("Printing all_links: {}".format(all_links_transfer_start_end), file=ff)
-            for link in all_links_transfer_start_end:
-                for s, e, broadcast_flag in link:
-                    print("one link start time is {}".format(s), file=ff)
+            print("\t The earliest start time is {} between SENDER {} and RECEIVER {} and the links start times are:".format(evictions_complete_timestep, sender_core, receiving_core), file=ff)
+            print("Printing all_links: {}".format(all_links_transfer_start), file=ff)
+            for link_start in all_links_transfer_start:
+                #for s, e, broadcast_flag in link:
+                print("one link start time is {}".format(link_start), file=ff)
         ###########################################################
 
         # loop over the start and the end of all of the links connecting the sender (offchip) and receiver, and count the ones of them that have s = evictions_complete_timestep (because this indicates that the link is idle and ready to transfer immediately)
         idle_count = 0
-        for link in all_links_transfer_start_end:
-            for s, e, broadcast_flag in link:
-                if s == evictions_complete_timestep:
-                    idle_count += 1
-        if idle_count < 2: # this means either there are no available links at all or there is only one link left
+        for link_start in all_links_transfer_start:
+            # for s, e, broadcast_flag in link:
+            if link_start == evictions_complete_timestep:
+                idle_count += 1
+        # Aya: temporarily relaxed the condition instead of < 2 until we resolve the get_links_idle_window problem
+        if idle_count <= 2: # this means either there are no available links at all or there is only one link left
             return 2 
         return 0
         # (2) If the data is not available inside the memTile, check if only one link of the offchip is idle and all the rest are busy, return 2; otherwise, return 0
@@ -353,6 +354,7 @@ class Accelerator:
                 sending_core_id, tensor.memory_operand
             )
             assert self.contains_tensor(tensor, storing_instance)
+
             available_since_timestep = (
                 self.memory_manager.top_instance_available_since_timestep[
                     storing_instance
@@ -429,6 +431,7 @@ class Accelerator:
                 # 2: indicating that the data is not present in the memTile and there is only one available offchip channel, so do offchip -> memTile then memTile -> core 
             use_memTile_flag_status = self.memTile_heuristic(memTile_core, memTile_flag, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep)
 
+
         if use_memTile_flag_status == 1: 
             actual_sender_core = memTile_core
             actual_receiving_core = receiving_core
@@ -456,6 +459,16 @@ class Accelerator:
         if use_memTile_flag_status == 2 and len(future_tensors) > 0:
             # Aya: since we will transfer through the memTile and we will prefetch multiple tensors, 
                 # we need to calculate the time needed to add those future tensors
+
+            # Aya: adjust the future tensors to remove from them any future tensor that was previously loaded in the memTile
+            for tens in future_tensors:
+                storing_instance = self.get_top_instance_of_core(
+                actual_receiving_core.id, tens.memory_operand
+            )
+                
+                if self.contains_tensor(tens, storing_instance):
+                    future_tensors.remove(tens)
+
             for tens, tens_operand in zip(future_tensors, future_tensors_operands): 
                 temp_time_step = evictions_complete_timestep
                 enough_space_timestep = self.memory_manager.get_timestep_for_tensor_addition(
@@ -478,7 +491,7 @@ class Accelerator:
                     memory_op=tens_operand,  
                     timestep=enough_space_timestep,
                     links_printing_file=links_printing_file,
-                    tensors_to_avoid_evicting=tensors_to_avoid_eviction,  # Aya: TODO: What is the best thing to pass here...
+                    tensors_to_avoid_evicting=tensors_to_avoid_eviction,  # Aya: For now I'm passing it as 16 future tensors after the current tensor being transferred
                 )
             ##########################
 
@@ -497,6 +510,7 @@ class Accelerator:
         # Aya
         if use_memTile_flag_status == 2 and len(future_tensors) > 0:
             # loop over future_tensors and call spawn for each of them
+            temp_transfer_start = transfer_start
             for t in future_tensors:
                 # first calculate the transfer duration for one t
                 if hasattr(chosen_links, '__iter__'):
@@ -504,15 +518,15 @@ class Accelerator:
                 else:
                     transfer_duration = t.size / chosen_links.bandwidth
 
-                transfer_end = transfer_start + transfer_duration
-                self.spawn(t, actual_receiving_core, tensor_operand, transfer_start, transfer_end)
-                transfer_start = transfer_end
+                temp_transfer_end = temp_transfer_start + transfer_duration
+                self.spawn(t, actual_receiving_core, tensor_operand, temp_transfer_start, temp_transfer_end)
+                temp_transfer_start = temp_transfer_end
         else:
             self.spawn(tensor, actual_receiving_core, tensor_operand, transfer_start, transfer_end)
         ################################# STEP 6 #################################
         # Update the links involved in the communication and get the transfer energy cost
         # Aya
-        if use_memTile_flag_status == 2 and len(future_tensors) > 0:
+        if use_memTile_flag_status == 2 and len(future_tensors) > 0: 
             (
                 transfer_link_energy_cost,
                 transfer_memory_energy_cost,
@@ -565,7 +579,7 @@ class Accelerator:
        
         with open(dbg_memTile_file, "a") as ff:
             print("\t----------------------------", file=ff)
-            print("The value of came_from_offchip is {} and the value of use_memTile_flag_status is {} and the end of the transfer is {}".format(came_from_offchip, use_memTile_flag_status, transfer_end), file=ff)
+            print("The value of came_from_offchip is {} and the value of use_memTile_flag_status is {} and the end of the transfer is {} and the tensor to transfer is {} and the chosen_links is {}".format(came_from_offchip, use_memTile_flag_status, transfer_end, tensor, chosen_links), file=ff)
             print("\t----------------------------", file=ff)
 
         return (

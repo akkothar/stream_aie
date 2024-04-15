@@ -1,10 +1,18 @@
-from unit_tests_accelerators.aie_core1 import (
+# This file is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+ 
+#
+# Copyright (C) 2024, Advanced Micro Devices, Inc.
+#
+#===----------------------------------------------------------------------===//
+
+from unit_tests_accelerators.aie_core1_large_memory import (
     get_core as one_aie_core,
 )
 from unit_tests_accelerators.shim_dma_core import (
     get_shim_dma_core as shim_core
 )
-from unit_tests_accelerators.mem_tile import (
+from unit_tests_accelerators.mem_tile_large_memory import (
     get_memTile_core as mem_tile,
 )
 
@@ -41,7 +49,7 @@ cores_graph = get_2d_mesh(
     offchip_write_channels_num=2,#3, 
     memTile_read_channels_num=6,#6,
     memTile_write_channels_num=4,#4,
-    use_shared_mem_flag=False, # for the unit test of the spatial separation
+    use_shared_mem_flag=True, # for the unit test of the spatial separation
     offchip_core=offchip_core,
 )  # , offchip_bandwidth=32)
 

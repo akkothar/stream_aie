@@ -1,3 +1,11 @@
+# This file is licensed under the terms of the MIT license.
+# For a copy, see <https://opensource.org/licenses/MIT>.
+ 
+#
+# Copyright (C) 2024, Advanced Micro Devices, Inc.
+#
+#===----------------------------------------------------------------------===
+
 from zigzag.classes.stages import *
 from stream.classes.stages import *
 from stream.visualization.schedule import (
@@ -29,7 +37,7 @@ workload_path = "unit_tests_workloads/test_4_indep_workload.onnx"
 mapping_path = "unit_tests_accelerators.four_cores_mapping"
 
 # Aya: added this to customize the path to the output
-example_name = "test_4_4cores_indep_2_channel_no_shared_WITH-NO-FIX-0.9-256L1"
+example_name = "test_4_4cores_yes_MemTile"
 results_path = f"unit_tests_results/" + example_name
 
 # Parameters determining the granularity of the layers splitting
@@ -99,10 +107,10 @@ mainstage = MainStage(
     operands_to_prefetch=[],
     split_W_percentage=split_W_percentage,
     results_path=results_path, # Aya: added this to define the path to the results
-    memTile_flag = False,  # Aya: added this to make it easy to add or remove memTiles
-    memTile_prefetch_flag=False,
+    memTile_flag=True,
+    memTile_prefetch_flag=True,
     memTile_prefetch_count=4,
-    memTile_eviction_flag=False,
+    memTile_eviction_flag=True,
 )
 
 # Launch the MainStage

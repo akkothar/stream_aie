@@ -19,7 +19,7 @@ def get_memory_hierarchy(multiplier_array):
   
     memTile = MemoryInstance(
         name="memtile",
-        size=512 * 1024 * 8, 
+        size=2048 * 1024 * 8,  
         r_bw=64 * 8,
         w_bw=64 * 8,
         r_cost=3.32 * 8,

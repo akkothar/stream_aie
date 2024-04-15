@@ -202,6 +202,9 @@ def get_2d_mesh(
             else:
                 if offchip_read_count < offchip_read_channels_num:
                     edges.append((core, offchip_core, {"cl":  generic_test_link}))  # in each iteration of the outer loop, it acts as 1 read channel of the offchip core and 1 write channel of every compute core
+                    if pooling_core:
+                        edges.append((pooling_core, offchip_core, {"cl":  generic_test_link}))
+                        edges.append((offchip_core, pooling_core, {"cl":  generic_test_link}))
                     offchip_read_flag = True
             
         for core in cores:    
@@ -213,6 +216,9 @@ def get_2d_mesh(
             else:
                 if offchip_write_count < offchip_write_channels_num:
                     edges.append((offchip_core, core, {"cl":  generic_test_link}))  # in each iteration of the outer loop, it acts as 1 write channel of the offchip core and 1 read channel of every compute core
+                    if pooling_core:
+                        edges.append((pooling_core, offchip_core, {"cl":  generic_test_link}))
+                        edges.append((offchip_core, pooling_core, {"cl":  generic_test_link}))
                     offchip_write_flag = True
 
         # (2) add a read and write edge between every core and every other core (including all memTiles)
