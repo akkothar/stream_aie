@@ -16,8 +16,8 @@ class StreamCostModelEvaluation:
         self,
         workload: DiGraph,
         accelerator: Accelerator,
-        scheduler_candidate_selection: str,
         operands_to_prefetch: list,
+        scheduling_order: list,
     ) -> None:
         # Initialize the SCME by setting the workload graph to be scheduled
         self.workload = workload
@@ -36,21 +36,22 @@ class StreamCostModelEvaluation:
         self.latency = None
         self.max_memory_usage = None
         self.core_timesteps_delta_cumsums = None
-        self.scheduler_candidate_selection = scheduler_candidate_selection
         self.operands_to_prefetch = operands_to_prefetch
+        self.scheduling_order = scheduling_order
 
     def __str__(self):
         return f"SCME(energy={self.energy:.2e}, latency={self.latency:.2e})"
 
     def run(self):
-        """Run the SCME by scheduling the graph through time. The scheduler takes into account inter-core data movement and also tracks energy and memory through the memory manager.
+        """Run the SCME by scheduling the graph through time.
+        The scheduler takes into account inter-core data movement and also tracks energy and memory through the memory manager.
         This assumes each node in the graph has an energy and runtime of the core to which they are allocated to.
         """
         results = schedule_graph(
             self.workload,
             self.accelerator,
-            candidate_selection=self.scheduler_candidate_selection,
             operands_to_prefetch=self.operands_to_prefetch,
+            scheduling_order=self.scheduling_order
         )
         self.latency = results[0]
         self.total_cn_onchip_energy = results[1]

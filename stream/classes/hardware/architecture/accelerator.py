@@ -177,11 +177,19 @@ class Accelerator:
 
         top_instance = self.get_top_instance_of_core(core, memory_op)
 
+        # Get the timestep at which there's enough space for this tensor
+        enough_space_timestep = self.memory_manager.get_timestep_for_tensor_addition(
+            tensor,
+            core.id,
+            timestep,
+            memory_op=tensor.memory_operand,
+        )
+
         tensors_to_evict = (
             self.memory_manager.find_best_tensor_combination_to_evict_fast(
                 top_instance,
                 tensor,
-                timestep,
+                enough_space_timestep,
                 exceptions=tensors_to_avoid_evicting,
             )
         )
@@ -205,7 +213,12 @@ class Accelerator:
             t_evictions_complete = max(t_evictions_complete, t_eviction_complete)
             total_eviction_link_energy_cost += eviction_link_energy_cost
             total_eviction_memory_energy_cost += eviction_memory_energy_cost
-        return t_evictions_complete, total_eviction_link_energy_cost, total_eviction_memory_energy_cost
+        t_evictions_complete = max(enough_space_timestep, t_evictions_complete)
+        return (
+            t_evictions_complete,
+            total_eviction_link_energy_cost,
+            total_eviction_memory_energy_cost,
+        )
 
     def transfer_tensor_to_core(
         self,
@@ -228,6 +241,7 @@ class Accelerator:
 
         The tensor is then added to the memory. Evictions are still possible if
         there wasn't enough space on the receiver core at any earlier timestep.
+        If one of the links already transferred the tensor, we broadcast if possible.
 
         Args:
             tensor (Tensor): The tensor to transfer.
@@ -304,9 +318,10 @@ class Accelerator:
         links = self.communication_manager.get_links_for_pair(
             sender_core, receiving_core
         )
+        links = {link: link.bandwidth for link in links}
         transfer_duration = max([ceil(tensor.size / link.bandwidth) for link in links])
         transfer_start = self.communication_manager.get_links_idle_window(
-            links, evictions_complete_timestep, transfer_duration
+            links, evictions_complete_timestep, transfer_duration, [tensor,]
         )
         transfer_end = transfer_start + transfer_duration
         ################################# STEP 5 #################################
@@ -330,9 +345,11 @@ class Accelerator:
         # if it is no longer needed.
         if sender_core.id == self.offchip_core_id:
             pass
+        # Don't remove it from the producing core 
         else:
+            not_on_producing_core = sender_core.id != tensor.origin.core_allocation
             if (storing_instance not in tensor.instance_priorities) or (
-                tensor.instance_priorities[storing_instance] == 0
+                not_on_producing_core and tensor.instance_priorities[storing_instance] == 0
             ):
                 self.remove(
                     tensor,
@@ -384,7 +401,7 @@ class Accelerator:
         )
         # Receiver memory energy
         nb_receiver_memory_writes_for_data = ceil(
-            tensor.size / sender_top_memory_level.write_bw
+            tensor.size / receiver_top_memory_level.write_bw
         )
         receiver_energy = (
             receiver_top_memory_level.write_energy * nb_receiver_memory_writes_for_data

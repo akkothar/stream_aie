@@ -5,6 +5,7 @@ from typing import List, Dict
 import networkx as nx
 import numpy as np
 from rtree import index
+from zigzag.utils import pickle_deepcopy
 from stream.classes.workload.elementwise_node import ElementwiseNode
 from stream.classes.workload.flatten_node import FlattenNode
 from stream.classes.workload.lpnormalization_node import LpNormalizationNode
@@ -62,16 +63,6 @@ class GenerateCNWorkloadHybridStage(Stage):
         self.hint_loops = (
             hint_loops  # can be outer-cn or inner-cn depending on cn_define_mode
         )
-        # layer_cutoffs is required only for cn_define_mode == 3
-        if cn_define_mode == 3:
-            try:
-                layer_cutoffs = self.kwargs["layer_cutoffs"]
-            except KeyError:
-                raise ValueError(
-                    "Please provide 'layer_cutoffs' when using cn_define_mode = 3."
-                )
-            assert len(layer_cutoffs) == len(self.hint_loops) - 1
-            self.layer_cutoffs = layer_cutoffs
 
         # compute the weight capacities of the different cores and the number of splits required for each layer
         if cn_define_mode == 4:
@@ -132,13 +123,21 @@ class GenerateCNWorkloadHybridStage(Stage):
         logger.info(f"Finer graph: {G}.")
 
         kwargs = self.kwargs.copy()
+        kwargs["original_workload"] = pickle_deepcopy(self.workload)
         kwargs["workload"] = G
         kwargs["accelerator"] = self.accelerator
+        kwargs["hint_loops"] = self.hint_loops
+        if "scheduling_order" not in kwargs:
+            kwargs["scheduling_order"] = self.get_scheduling_order(G)
         sub_stage = self.list_of_callables[0](self.list_of_callables[1:], **kwargs)
         for cme, extra_info in sub_stage.run():
             yield cme, extra_info
 
         yield None, None
+
+    @staticmethod
+    def get_scheduling_order(workload):
+        return sorted((n.id for n in workload.nodes()), reverse=True)
 
     @staticmethod
     def get_all_node_pairs(G):
@@ -188,13 +187,15 @@ class GenerateCNWorkloadHybridStage(Stage):
             inner_cn_loops = self.hint_loops.copy()
             outer_loops = convert_inner_cn_loops(inner_cn_loops, layer)
         elif self.cn_define_mode == 3:
-            # Assume that self.outer_cn_loops is a nested list
-            # The self.layer_cutoffs list specifies the transition from one list of cn loops to the next
-            # So for outer_cn_loops = [[("OY", "all")], [("OY", "all"), ("K", "all")]] and layer_cutoffs = [4]
-            # layer ids 0 to 3 will use [("OY", "all")] and layer ids 4 to end will use [("OY", "all), ("K", "all")]
+            # Assume that self.hint_loops is a dict
+            # A key is a tuple containing the layer ids that should use the value as hint_loops
+            # So for self.hint_loops = {(0,1,2,3): [("OY", "all")], (4,): [("OY", "all"), ("K", "all")]}
+            # layer ids 0 to 3 will use [("OY", "all")] and layer id 4 will use [("OY", "all), ("K", "all")]
             # Find which sublist this layer should use
-            idx = np.searchsorted(self.layer_cutoffs, layer.id[0], side="right")
-            outer_cn_loops = self.hint_loops[idx].copy()
+            try:
+                outer_cn_loops = next(v for k, v in self.hint_loops.items() if layer.id[0] in k)
+            except StopIteration:
+                raise ValueError(f"Layer id {layer.id[0]} not in hint_loops: {self.hint_loops}")
             outer_loops = convert_outer_cn_loops(outer_cn_loops, layer)
         elif self.cn_define_mode == 4:
             # Assume we always split in the hint_loops dimensions
@@ -279,7 +280,7 @@ class GenerateCNWorkloadHybridStage(Stage):
         original_node_id = original_node.id[0]
 
         # Take away the outer_temporal_loops to create finer CNs for this node
-        finer_node_attrs = original_node.attrs.copy()
+        finer_node_attrs = pickle_deepcopy(original_node.attrs)
         for outer_tl in outer_temporal_loops:
             outer_dim = outer_tl.dimension
             outer_size = outer_tl.size
@@ -330,6 +331,7 @@ class GenerateCNWorkloadHybridStage(Stage):
 
         finer_nodes = []
         groups = {}
+        tensors = []
         for n in range(nb_cns):
             outer_loop_values = []
             for i, outer_loop in enumerate(outer_temporal_loops):
@@ -397,6 +399,16 @@ class GenerateCNWorkloadHybridStage(Stage):
             for constant_operand in finer_node.constant_operands:
                 tensor = finer_node.operand_tensors[constant_operand]
                 tensor.set_base_priorities(tensor_reuse_factors[constant_operand][n])
+
+            # Replace any of the tensors with identical tensors of previous finer nodes
+            for op, tensor in finer_node.operand_tensors.items():
+                replaced = False
+                for previous_tensor in tensors:
+                    if tensor.equality_hash() == previous_tensor.equality_hash():
+                        finer_node.operand_tensors[op] = previous_tensor
+                        replaced = True
+                if not replaced:
+                    tensors.append(tensor)
 
             # Compute the output data produced by each finer node, assuming that all the data produced by different CNs are unique
             finer_node.data_produced_unique = (
@@ -901,8 +913,10 @@ class GenerateCNWorkloadHybridStage(Stage):
         for node in self.workload.nodes():
             # Get the weight capacity of all possible core allocations of this node
             core_allocations = node.core_allocation
-            if isinstance(node, DummyNode) or not isinstance(core_allocations, list):
+            if isinstance(node, DummyNode):
                 continue
+            if isinstance(core_allocations, int):
+                continue  # for fixed single allocation don't consider the splitting
             core_capacities = [
                 self.weight_capacities[core_id] for core_id in core_allocations
             ]

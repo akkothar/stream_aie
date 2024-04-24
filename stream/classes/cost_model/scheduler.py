@@ -78,25 +78,15 @@ def prefetch_constant_operands(
     )
 
 
-def get_best_candidate(candidates: list, candidate_selection: str):
+def get_best_candidate(candidates: list, scheduling_order: list):
     # If this core doesn't have any candidates, continue to the next core
     if not candidates:
         raise ValueError(f"There are no candidates to schedule.")
     preds_ends, cn_candidates = zip(*candidates)
-    if candidate_selection == "latency":
-        # Get the best candidate: the one with the earliest possible start time
-        (preds_end, best_candidate) = min(candidates)
-        best_candidate_idx = preds_ends.index(preds_end)
-    elif candidate_selection == "memory":
-        # Get the best candidate: the one with the highest layer_id
-        candidate_ids = [(cn.id[0], -cn.group, cn.id[1]) for cn in cn_candidates]
-        best_candidate_idx = candidate_ids.index(max(candidate_ids))
-        best_candidate = cn_candidates[best_candidate_idx]
-        preds_end = preds_ends[best_candidate_idx]
-    else:
-        raise ValueError(
-            f"Scheduler's CN candidate_selection criterion '{candidate_selection}' is not supported."
-        )
+    idxs = [scheduling_order.index(n.id) for n in cn_candidates]
+    best_candidate_idx = idxs.index(min(idxs))
+    best_candidate = cn_candidates[best_candidate_idx]
+    preds_end = preds_ends[best_candidate_idx]
     # Remove the candidate from the list of candidates
     del candidates[best_candidate_idx]
     return best_candidate, preds_end
@@ -245,8 +235,8 @@ def schedule_graph(
     G: DiGraph,
     accelerator: Accelerator,
     cores_idle_from=None,
-    candidate_selection="latency",
     operands_to_prefetch=[],
+    scheduling_order=None,
 ):
     """Schedule the nodes of graph G across the cores in the system.
     Each node should have a core_allocation and runtime set.
@@ -324,7 +314,9 @@ def schedule_graph(
     done = False
     while not done:
         # Get the best candidate given the selection priority
-        best_candidate, preds_end = get_best_candidate(candidates, candidate_selection)
+        best_candidate, preds_end = get_best_candidate(
+            candidates, scheduling_order
+        )
 
         # Get the core this candidate will be scheduled on
         core_id = best_candidate.core_allocation
@@ -396,9 +388,6 @@ def schedule_graph(
             best_candidate.get_runtime(),
             best_candidate,
         )
-        # Get the start and end time of the candidate
-        start = timestep
-        end = start + best_candidate.get_runtime()
 
         ## Step 4
         # Make space for the output tensor of this computation node and spawn it when evictions are complete
@@ -420,7 +409,7 @@ def schedule_graph(
             output_tensor,
             core_to_add_output_to,
             output_memory_operand,
-            start,
+            timestep,
             tensors_this_candidate_needs,
         )
         total_eviction_to_offchip_link_energy += eviction_link_energy_cost

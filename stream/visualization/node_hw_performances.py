@@ -63,8 +63,11 @@ def visualize_node_hw_performances_pickle(
     plt.rc("legend", fontsize=SMALL_SIZE)  # legend fontsize
     plt.rc("figure", titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
-    with open(pickle_filepath, "rb") as handle:
-        node_hw_performances = pickle.load(handle)
+    if isinstance(pickle_filepath, str):
+        with open(pickle_filepath, "rb") as handle:
+            node_hw_performances = pickle.load(handle)
+    else:
+        node_hw_performances = pickle_filepath
 
     # first_key = next(iter(node_hw_performances))
     # node_hw_performances = {first_key: node_hw_performances[first_key]}
@@ -86,7 +89,7 @@ def visualize_node_hw_performances_pickle(
     min_latency_per_node = {}
     min_energy_per_node = {}
     for node, hw_performances in node_hw_performances.items():
-        node_labels.append(f"L{node.id[0]}\nN{node.id[1]}")
+        node_labels.append(f"L{node.id[0]}\nN{node.id[1]}\nx{scale_factors[node]}")
         min_latency_per_node[node] = float("inf")
         min_energy_per_node[node] = float("inf")
         for core, cme in hw_performances.items():

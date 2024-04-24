@@ -10,6 +10,7 @@ from stream.classes.opt.allocation.genetic_algorithm.fitness_evaluator import (
     StandardFitnessEvaluator,
 )
 from stream.utils import get_too_large_operands
+from zigzag.classes.cost_model.cost_model import get_total_inst_bandwidth
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,6 @@ class InterCoreMappingStage(Stage):
         plot_file_name,
         plot_full_schedule=False,
         plot_data_transfer=False,
-        scheduler_candidate_selection,
         operands_to_prefetch,
         **kwargs,
     ):
@@ -59,10 +59,10 @@ class InterCoreMappingStage(Stage):
         self.fig_path = plot_file_name
         self.plot_full_schedule = plot_full_schedule
         self.plot_data_transfer = plot_data_transfer
-        self.scheduler_candidate_selection = scheduler_candidate_selection
         self.operands_to_prefetch = operands_to_prefetch
+        self.scheduling_order = kwargs.get("scheduling_order", None)
 
-        # Determine the set of all (layer, group) combinations to vbe allocated separately
+        # Determine the set of all (layer, group) combinations to be allocated separately
         self.layer_groups = sorted(
             set((n.id[0], n.group) for n in self.workload.nodes())
         )
@@ -94,7 +94,7 @@ class InterCoreMappingStage(Stage):
             unique_node = next((n for n in self.unique_nodes if n.id[0] == layer_id))
             if unique_node in self.unique_nodes_flexible:
                 hw_performances = self.node_hw_performances[unique_node]
-                valid_core_ids = [core.id for core in hw_performances.keys()]
+                valid_core_ids = [core.id for core in hw_performances.keys() if core.id < len(self.unique_nodes_flexible)]
                 self.layer_groups_flexible.append((layer_id, group_id))
                 self.valid_allocations.append(valid_core_ids)
 
@@ -107,8 +107,8 @@ class InterCoreMappingStage(Stage):
             self.accelerator,
             self.node_hw_performances,
             self.layer_groups_flexible,
-            self.scheduler_candidate_selection,
             self.operands_to_prefetch,
+            self.scheduling_order,
         )
 
         # Extract the length of an individual.
@@ -158,8 +158,6 @@ class InterCoreMappingStage(Stage):
             # Run the genetic algorithm and get the results
             pop, hof = self.genetic_algorithm.run()
             logger.info(f"Finished Genetic Algorithm.")
-            print("Hall of fame:")
-            print(hof)
             if self.plot_hof:
                 for i, core_allocations in enumerate(hof):
                     results = self.fitness_evaluator.get_fitness(
@@ -208,13 +206,18 @@ class InterCoreMappingStage(Stage):
                 layer_operand_offchip_energy = cme.energy_breakdown[layer_operand][-1]
                 offchip_energy += layer_operand_offchip_energy
                 onchip_energy -= layer_operand_offchip_energy
+            # If there was offchip memory added for too_large_operands, get the offchip bandwidth
+            offchip_core = self.accelerator.get_core(self.accelerator.offchip_core_id)
+            offchip_instance = next(v for k, v in offchip_core.mem_hierarchy_dict.items())[-1].memory_instance
+            offchip_bw = get_total_inst_bandwidth(cme, offchip_instance)
 
-            nodes = (n for n in self.workload.nodes() if n == non_flexible_unique_node)
+            nodes = (n for n in self.workload.nodes() if n == non_flexible_unique_node and n.group == non_flexible_unique_node.group)
             for node in nodes:
                 self.set_hw_performance_node(
                     node, onchip_energy, offchip_energy, latency, core_allocation
                 )
                 node.set_too_large_operands(too_large_operands.copy())
+                node.set_offchip_bandwidth(offchip_bw)
 
     @staticmethod
     def set_hw_performance_node(
