@@ -3,7 +3,10 @@ import networkx as nx
 from networkx import DiGraph, MultiDiGraph
 
 from stream.classes.hardware.architecture.communication_link import CommunicationLink
-from zigzag.classes.hardware.architecture.core import Core
+
+# Aya: import from stream_core class instead
+#from zigzag.classes.hardware.architecture.core import Core
+from stream.classes.hardware.architecture.stream_core import Core
 
 # From the AIE-MLs perspective, the throughput of each of the loads and store is 256 bits per clock cycle.
 aya_core_to_core_bw = 256  # bandwidth of every link connecting two neighboring cores

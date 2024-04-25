@@ -111,6 +111,7 @@ mainstage = MainStage(
     memTile_prefetch_flag=True,
     memTile_prefetch_count=4,
     memTile_eviction_flag=True,
+    idle_num_for_mem_tile=2, # Aya: represents the number of idle offchip links after which we start to go through the memTile
 )
 
 # Launch the MainStage

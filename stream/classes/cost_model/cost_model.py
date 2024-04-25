@@ -25,6 +25,7 @@ class StreamCostModelEvaluation:
         memTile_prefetch_flag: bool, # Aya 
         memTile_prefetch_count: int, # Aya
         memTile_eviction_flag: bool, # Aya
+        idle_num_for_mem_tile: int, # Aya
     ) -> None:
         # Initialize the SCME by setting the workload graph to be scheduled
         self.workload = workload
@@ -54,6 +55,8 @@ class StreamCostModelEvaluation:
         self.memTile_prefetch_flag = memTile_prefetch_flag
         self.memTile_prefetch_count = memTile_prefetch_count
         self.memTile_eviction_flag = memTile_eviction_flag
+
+        self.idle_num_for_mem_tile = idle_num_for_mem_tile
 
     def __str__(self):
         return f"SCME(energy={self.energy:.2e}, latency={self.latency:.2e})"
@@ -92,6 +95,7 @@ class StreamCostModelEvaluation:
             memTile_eviction_flag=self.memTile_eviction_flag,
             future_tensors_num=self.memTile_prefetch_count,
             #candidate_selection=self.scheduler_candidate_selection,
+            idle_num_for_mem_tile=self.idle_num_for_mem_tile,
             operands_to_prefetch=self.operands_to_prefetch,
             scheduling_order=self.scheduling_order,
         )

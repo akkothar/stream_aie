@@ -85,6 +85,8 @@ class InterCoreMappingStage(Stage):
         # Aya: added this to customize the path to the output
         self.results_path = kwargs["results_path"]
 
+        self.idle_num_for_mem_tile = kwargs["idle_num_for_mem_tile"]
+
          # Aya: added this to print the original DFG workload before applying any splitting
         # with open(self.results_path + "/testing_cns_preds_Original_DFG_in_InterStage.txt", "a") as ff:
         #     self.print_cns_preds(ff)
@@ -142,6 +144,7 @@ class InterCoreMappingStage(Stage):
             self.memTile_prefetch_flag,
             self.memTile_prefetch_count,
             self.memTile_eviction_flag,
+            self.idle_num_for_mem_tile,
         )
 
         # Extract the length of an individual.

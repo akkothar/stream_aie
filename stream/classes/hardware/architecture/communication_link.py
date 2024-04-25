@@ -4,8 +4,9 @@ import numpy as np
 from stream.classes.workload.tensor import Tensor
 from stream.classes.cost_model.communication_manager import CommunicationLinkEvent
 
-# Aya
-from zigzag.classes.hardware.architecture.core import Core
+# Aya: import from stream_core class instead
+#from zigzag.classes.hardware.architecture.core import Core
+from stream.classes.hardware.architecture.stream_core import Core
 
 
 

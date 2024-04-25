@@ -1,7 +1,10 @@
 from operator import attrgetter, itemgetter
 from networkx import DiGraph
 
-from zigzag.classes.hardware.architecture.core import Core
+# Aya: import from stream_core class instead
+#from zigzag.classes.hardware.architecture.core import Core
+from stream.classes.hardware.architecture.stream_core import Core
+
 from stream.classes.cost_model.memory_manager import MemoryManager
 from stream.classes.hardware.architecture.accelerator import Accelerator
 from stream.classes.workload.computation_node import ComputationNode
@@ -383,6 +386,7 @@ def schedule_graph(
     memTile_flag: bool, # Aya
     memTile_eviction_flag: bool, # Aya
     future_tensors_num: int, # Aya: represents the number of tensors we will consider in a single transfer from the offchip core to the memTile core
+    idle_num_for_mem_tile: int,  # Aya: represents the number of idle offchip links after which we start to go through the memTile
     cores_idle_from=None,
     operands_to_prefetch=[],
     scheduling_order=None,
@@ -555,6 +559,7 @@ def schedule_graph(
                 future_tensors, # Aya
                 future_tensors_operands, # Aya
                 all_tensors, # Aya
+                idle_num_for_mem_tile, # Aya
                 links_printing_file, # Aya
                 dbg_memTile_file, # Aya
             )
@@ -589,6 +594,7 @@ def schedule_graph(
                     [], # Aya: I do not need to pass any future_tensors to the second call of transfer_tensor_to_core
                     [], # Aya: I do not need to pass any future_tensors_operands to the second call of transfer_tensor_to_core
                     [], # Aya: I do not need to pass all_tensors to the second call of transfer_tensor_to_core
+                    None,
                     links_printing_file, # Aya
                     dbg_memTile_file, # Aya
                     # specify the sender_core_id

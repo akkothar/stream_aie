@@ -6,7 +6,11 @@ import bisect
 from sympy import factorint
 
 from zigzag.classes.hardware.architecture.accelerator import Accelerator
-from zigzag.classes.hardware.architecture.core import Core
+
+# Aya: import from stream_core class instead
+#from zigzag.classes.hardware.architecture.core import Core
+from stream.classes.hardware.architecture.stream_core import Core
+
 from zigzag.classes.hardware.architecture.dimension import Dimension
 from zigzag.classes.hardware.architecture.memory_hierarchy import MemoryHierarchy
 from zigzag.classes.hardware.architecture.operational_array import OperationalArray

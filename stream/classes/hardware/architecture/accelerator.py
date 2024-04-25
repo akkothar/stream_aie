@@ -1,7 +1,10 @@
 from math import ceil
 from networkx import DiGraph, MultiDiGraph
 
-from zigzag.classes.hardware.architecture.core import Core
+# Aya: import from stream_core class instead
+#from zigzag.classes.hardware.architecture.core import Core
+from stream.classes.hardware.architecture.stream_core import Core
+
 from stream.classes.cost_model.memory_manager import MemoryManager
 from stream.classes.cost_model.communication_manager import CommunicationManager
 from stream.classes.workload.tensor import Tensor
@@ -122,6 +125,7 @@ class Accelerator:
                 future_tensors=[], # Aya
                 future_tensors_operands=[], # Aya
                 all_future_tensors=[], # Aya
+                idle_num_for_mem_tile= None, # Aya
                 links_printing_file=links_printing_file,
                 dbg_memTile_file=dbg_memTile_file,
                 sending_core_id=core.id,
@@ -252,7 +256,7 @@ class Accelerator:
                 # 0: indicating that we have enough offchip channels 
                 # 1: indicating that the data is already present in the memTile and we should directly tansfer it from there
                 # 2: indicating that the data is not present in the memTile and there is only one available offchip channel, so do offchip -> memTile then memTile -> core 
-    def memTile_heuristic(self, memTile_core, use_heur_flag, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep):
+    def memTile_heuristic(self, memTile_core, use_heur_flag, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep, idle_num_for_mem_tile):
         if not use_heur_flag:
             return 0
         # Two things:
@@ -296,7 +300,7 @@ class Accelerator:
             if link_start == evictions_complete_timestep:
                 idle_count += 1
         # Aya: temporarily relaxed the condition instead of < 2 until we resolve the get_links_idle_window problem
-        if idle_count <= 2: # this means either there are no available links at all or there is only one link left
+        if idle_count <= idle_num_for_mem_tile: # this means either there are no available links at all or there is only one link left
             return 2 
         return 0
         # (2) If the data is not available inside the memTile, check if only one link of the offchip is idle and all the rest are busy, return 2; otherwise, return 0
@@ -311,6 +315,7 @@ class Accelerator:
         future_tensors: list, # Aya
         future_tensors_operands: list, # Aya
         all_future_tensors: list, # Aya: needed in case of necessary evictions
+        idle_num_for_mem_tile: int, # Aya
         links_printing_file: str,  # Aya
         dbg_memTile_file: str, # Aya
         sending_core_id: int = None,
@@ -429,7 +434,7 @@ class Accelerator:
                 # 0: indicating that we have enough offchip channels 
                 # 1: indicating that the data is already present in the memTile and we should directly tansfer it from there
                 # 2: indicating that the data is not present in the memTile and there is only one available offchip channel, so do offchip -> memTile then memTile -> core 
-            use_memTile_flag_status = self.memTile_heuristic(memTile_core, memTile_flag, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep)
+            use_memTile_flag_status = self.memTile_heuristic(memTile_core, memTile_flag, tensor, tensor_operand, sender_core, receiving_core, evictions_complete_timestep, idle_num_for_mem_tile)
 
 
         if use_memTile_flag_status == 1: 

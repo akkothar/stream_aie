@@ -7,7 +7,11 @@ import logging
 import numpy as np
 
 from zigzag.classes.cost_model.cost_model import CostModelEvaluation
-from zigzag.classes.hardware.architecture.core import Core
+
+# Aya: import from stream_core class instead
+#from zigzag.classes.hardware.architecture.core import Core
+from stream.classes.hardware.architecture.stream_core import Core
+
 from zigzag.classes.stages import *
 from zigzag.classes.stages.Stage import Stage
 from stream.classes.workload.computation_node import ComputationNode

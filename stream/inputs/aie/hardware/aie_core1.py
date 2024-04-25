@@ -3,7 +3,11 @@ from zigzag.classes.hardware.architecture.memory_hierarchy import MemoryHierarch
 from zigzag.classes.hardware.architecture.memory_instance import MemoryInstance
 from zigzag.classes.hardware.architecture.operational_unit import Multiplier
 from zigzag.classes.hardware.architecture.operational_array import MultiplierArray
-from zigzag.classes.hardware.architecture.core import Core
+
+
+# Aya: import from stream_core class instead
+#from zigzag.classes.hardware.architecture.core import Core
+from stream.classes.hardware.architecture.stream_core import Core
 
 from stream.inputs.aie.hardware.mem_tile import mem_tile
 from stream.inputs.aie.hardware.mem_tile import mem_tile1
