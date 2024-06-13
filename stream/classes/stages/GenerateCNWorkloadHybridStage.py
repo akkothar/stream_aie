@@ -94,14 +94,31 @@ class GenerateCNWorkloadHybridStage(Stage):
         G = nx.DiGraph()
         # Aya added this to capture only the data dependencies without the intra edges dependencies
         G_without_intra = nx.DiGraph()
+        print("self.cn_define_mode:")
+        print(self.cn_define_mode)
 
         for node in nx.topological_sort(self.workload):
+            print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            print(node)
+            print(node.name)
+            print(node.loop_ranges)
             if not isinstance(
                 node, ComputationNode
             ):  # If other node types shouldn't be included in finer node graph, add here
                 continue
             outer_temporal_loops = self.get_outer_tmap_loop_dimensions(node)
+            print("outer_temporal_loops:")
+            print(outer_temporal_loops)
             finer_nodes, unique_nodes = self.get_finer_nodes(node, outer_temporal_loops)
+            print("finer_nodes")
+            print(finer_nodes)
+            print("unique_nodes")
+            print(unique_nodes)
+            for node in finer_nodes:
+                print("finer node name:")
+                print(node.name)
+                print("finer nodes loop ranges:")
+                print(node.loop_ranges)
             logger.info(f"{node}: Outer loops {outer_temporal_loops}.")
             logger.info(f"{node}: Generated {len(finer_nodes)} finer nodes.")
             self.finer_nodes_dict[node] = finer_nodes
@@ -223,6 +240,8 @@ class GenerateCNWorkloadHybridStage(Stage):
             # Assume we always split in the hint_loops dimensions
             # Check if we need to split in K dimension for it to not block offchip during computation
             outer_cn_loops = self.hint_loops.copy()
+            print("outer_cn_loops:")
+            print(outer_cn_loops)
             try:
                 split_factor = self.layer_split_factors_k[layer]
             except KeyError:
@@ -297,6 +316,7 @@ class GenerateCNWorkloadHybridStage(Stage):
     def get_finer_nodes(
         original_node, outer_temporal_loops
     ) -> tuple[list[ComputationNode], list[ComputationNode]]:
+        print("GET FINER NODES")
         # Extract the original node id. This should be a tuple of length one.
         # The finer nodes we generate will have a tuple of length two, of format (original_node_id, finer_node_id)
         original_node_id = original_node.id[0]
@@ -780,6 +800,7 @@ class GenerateCNWorkloadHybridStage(Stage):
         return inter_edges
 
     def get_tensor_cns(self, node, finer_nodes):
+        print("get_tensor_cns")
         is_source_node = len(self.get_non_type_predecessors(node, [DummyNode])) == 0
         variable_operands = node.variable_input_operands + [node.output_operand]
         tensor_dims = {
@@ -788,10 +809,14 @@ class GenerateCNWorkloadHybridStage(Stage):
         all_loop_dim_sizes = (
             node.loop_dim_size | node.pr_loop_dim_size
         )  # union of dicts
+        print("all_loop_dim_sizes:")
+        print(all_loop_dim_sizes)
         tensor_shapes = {
             op: tuple([all_loop_dim_sizes[dim] for dim in dims])
             for (op, dims) in tensor_dims.items()
         }
+        print("tensor_shapes:")
+        print(tensor_shapes)
         tensors_cns = {
             op: np.ndarray(shape, dtype=set) for (op, shape) in tensor_shapes.items()
         }  # Initial arrays

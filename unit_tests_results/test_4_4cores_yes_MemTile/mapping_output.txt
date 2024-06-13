@@ -1,0 +1,12 @@
+############ The mapping results for one layer are ############
+Number of elements at each memory level is {'O': [16, 256, 1024, 131072, 131072], 'A': [16, 256, 4096, 1048576, 1048576], 'B': [256, 256, 131072]}
+Number of bits at each memory level is {'O': [256, 4096, 16384, 1048576, 1048576], 'A': [128, 2048, 32768, 8388608, 8388608], 'B': [2048, 2048, 1048576]}
+
+Spatial mapping field of the CME: SpatialMapping({'O': [[('K', 16.0), ('C', 16.0)], [], [], [], []], 'B': [[('K', 16.0), ('C', 16.0)], [], []], 'A': [[('K', 16.0), ('C', 16.0)], [], [], [], []]})
+############ End of the mapping results of one layer ############
+############ The mapping results for one layer are ############
+Number of elements at each memory level is {'O': [16, 256, 1024, 131072, 131072], 'A': [16, 256, 4096, 1048576, 1048576], 'B': [256, 256, 131072]}
+Number of bits at each memory level is {'O': [256, 4096, 16384, 1048576, 1048576], 'A': [128, 2048, 32768, 8388608, 8388608], 'B': [2048, 2048, 1048576]}
+
+Spatial mapping field of the CME: SpatialMapping({'O': [[('K', 16.0), ('C', 16.0)], [], [], [], []], 'B': [[('K', 16.0), ('C', 16.0)], [], []], 'A': [[('K', 16.0), ('C', 16.0)], [], [], [], []]})
+############ End of the mapping results of one layer ############

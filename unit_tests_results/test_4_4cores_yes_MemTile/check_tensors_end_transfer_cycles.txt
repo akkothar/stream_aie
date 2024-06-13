@@ -1,0 +1,32 @@
+NORMAL Transfer of Tensor(0, 6, 'B') to ComputationNode(0, 6) on Core 2 is completed at Cycle 0. It is produced by ComputationNode(0, 6) and is coming from the offchip core
+NORMAL Transfer of Tensor(0, 5, 'B') to ComputationNode(0, 5) on Core 0 is completed at Cycle 0. It is produced by ComputationNode(0, 5) and is coming from the offchip core
+NORMAL Transfer of Tensor(0, 7, 'B') to ComputationNode(0, 7) on Core 3 is completed at Cycle 4096. It is produced by ComputationNode(0, 7) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 6) on Core 2 is completed at Cycle 573566. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 4, 'B') to ComputationNode(0, 4) on Core 2 is completed at Cycle 573566. It is produced by ComputationNode(0, 4) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 7) on Core 3 is completed at Cycle 577662. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 2, 'B') to ComputationNode(0, 2) on Core 3 is completed at Cycle 577662. It is produced by ComputationNode(0, 2) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 5) on Core 0 is completed at Cycle 1147132.0. It is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 4) on Core 2 is completed at Cycle 1147132. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 1, 'B') to ComputationNode(0, 1) on Core 2 is completed at Cycle 1147132. It is produced by ComputationNode(0, 1) and is coming from the offchip core
+NORMAL Transfer of Tensor(0, 3, 'B') to ComputationNode(0, 3) on Core 1 is completed at Cycle 1151228.0. It is produced by ComputationNode(0, 3) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 2) on Core 3 is completed at Cycle 1151228. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 0, 'B') to ComputationNode(0, 0) on Core 3 is completed at Cycle 1151228. It is produced by ComputationNode(0, 0) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 1) on Core 2 is completed at Cycle 1720698. It is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 3) on Core 1 is completed at Cycle 1724794.0. It is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 0) on Core 3 is completed at Cycle 1724794. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 6, 'B') to ComputationNode(0, 6) on Core 1 is completed at Cycle 0. It is produced by ComputationNode(0, 6) and is coming from the offchip core
+NORMAL Transfer of Tensor(0, 5, 'B') to ComputationNode(0, 5) on Core 0 is completed at Cycle 0. It is produced by ComputationNode(0, 5) and is coming from the offchip core
+NORMAL Transfer of Tensor(0, 4, 'B') to ComputationNode(0, 4) on Core 2 is completed at Cycle 0. It is produced by ComputationNode(0, 4) and is coming from the offchip core
+NORMAL Transfer of Tensor(0, 7, 'B') to ComputationNode(0, 7) on Core 3 is completed at Cycle 4096. It is produced by ComputationNode(0, 7) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 6) on Core 1 is completed at Cycle 573566. It is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 7) on Core 3 is completed at Cycle 577662. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 2, 'B') to ComputationNode(0, 2) on Core 3 is completed at Cycle 577662. It is produced by ComputationNode(0, 2) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 5) on Core 0 is completed at Cycle 1147132.0. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 1, 'B') to ComputationNode(0, 1) on Core 0 is completed at Cycle 1147132.0. It is produced by ComputationNode(0, 1) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 4) on Core 2 is completed at Cycle 1151228.0. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 3, 'B') to ComputationNode(0, 3) on Core 2 is completed at Cycle 1151228.0. It is produced by ComputationNode(0, 3) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 2) on Core 3 is completed at Cycle 1151228. It is coming from the offchip core
+NORMAL Transfer of Tensor(0, 0, 'B') to ComputationNode(0, 0) on Core 3 is completed at Cycle 1151228. It is produced by ComputationNode(0, 0) and is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 1) on Core 0 is completed at Cycle 1720698.0. It is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 3) on Core 2 is completed at Cycle 1724794.0. It is coming from the offchip core
+BLOCK Transfer of O to ComputationNode(0, 0) on Core 3 is completed at Cycle 1724794. It is coming from the offchip core

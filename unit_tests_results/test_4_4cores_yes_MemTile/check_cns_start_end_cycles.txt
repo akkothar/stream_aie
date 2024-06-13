@@ -1,0 +1,16 @@
+Start time of ComputationNode(0, 6) on Core 2 is Cycle 0.
+Start time of ComputationNode(0, 7) on Core 3 is Cycle 4096.
+Start time of ComputationNode(0, 5) on Core 0 is Cycle 573566.0.
+Start time of ComputationNode(0, 4) on Core 2 is Cycle 573566.
+Start time of ComputationNode(0, 2) on Core 3 is Cycle 577662.
+Start time of ComputationNode(0, 1) on Core 2 is Cycle 1147132.
+Start time of ComputationNode(0, 3) on Core 1 is Cycle 1151228.0.
+Start time of ComputationNode(0, 0) on Core 3 is Cycle 1151228.
+Start time of ComputationNode(0, 6) on Core 1 is Cycle 0.
+Start time of ComputationNode(0, 7) on Core 3 is Cycle 4096.
+Start time of ComputationNode(0, 5) on Core 0 is Cycle 573566.0.
+Start time of ComputationNode(0, 4) on Core 2 is Cycle 577662.0.
+Start time of ComputationNode(0, 2) on Core 3 is Cycle 577662.
+Start time of ComputationNode(0, 1) on Core 0 is Cycle 1147132.0.
+Start time of ComputationNode(0, 3) on Core 2 is Cycle 1151228.0.
+Start time of ComputationNode(0, 0) on Core 3 is Cycle 1151228.

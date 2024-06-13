@@ -1,0 +1,4 @@
+One prefetch ends at Cycle 0
+The cores that we prefectched weights to initially are: []
+One prefetch ends at Cycle 0
+The cores that we prefectched weights to initially are: []
